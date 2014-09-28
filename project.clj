@@ -22,10 +22,6 @@
                  [com.googlecode.lanterna/lanterna "2.1.9"]
                  [com.taoensso/carmine "2.7.0"
                   :exclusions [org.clojure/clojure]]
-                 [org.zeromq/jeromq "0.3.4"]
-                 [org.zeromq/cljzmq "0.1.4" :exclusions [org.zeromq/jzmq]]
-                 [cheshire "5.3.1"]
-                 [criterium "0.4.3"]]
-  :profiles {:dev {:source-paths ["dev"]}
-             :uberjar {:main ^:skip-aot frontier.core
-                       :aot :all}})
+                 [crypto-password "0.1.3"]]
+  :profiles {:dev {:dependencies [[criterium "0.4.3"]]
+                   :source-paths ["dev"]}})

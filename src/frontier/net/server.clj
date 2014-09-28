@@ -2,7 +2,8 @@
   (:require [com.stuartsierra.component :as c]
             [clojure.tools.namespace.repl :refer [refresh]]
             [clojure.tools.logging :as log]
-            [clojure.core.async :as a :refer [go go-loop <! >! put! chan alts!]]
+            [clojure.core.async :as a :refer [go go-loop <! >! put! chan alts!
+                                              close! sub pub unsub timeout]]
             [frontier.net.async :refer [future-chan]]
             [frontier.util.redis :as redis]
             [clojure.java.io :as io]
@@ -42,44 +43,76 @@
          (fn [msg] (get-in msg [:packet :op]))
          (fn [op] (a/sliding-buffer 1))))
 
+(defn ensure-ack
+  ([ctx msg] (ensure-ack ctx msg 1000))
+  ([ctx msg resend-ms] (ensure-ack ctx msg resend-ms 15000))
+  ([ctx msg resend-ms link-dead-ms]
+     (go (<! (future-chan (.write ^ChannelHandlerContext ctx msg)))
+         (let [{:keys [id in pub]} (:session msg)
+               ctx ^ChannelHandlerContext ctx
+               op (get-in msg [:packet :op])
+               ack (sub pub :ack (chan 1))
+               link-dead (timeout link-dead-ms)
+               ack? (loop [t (timeout resend-ms)]
+                      (when-some [[msg ch] (alts! [ack link-dead t])]
+                        (condp identical? ch
+                          ack (if (= (get-in msg [:packet :ack]) op)
+                                true
+                                (recur t))
+                          t (do (<! (future-chan (.write ctx msg)))
+                                (recur (timeout resend-ms)))
+                          link-dead false)))]
+           (close! ack)
+           (close! link-dead)
+           ack?))))
+
 (defmethod handle-client-op :connect
   [^ChannelHandlerContext ctx msg]
   (let [in (chan (a/sliding-buffer 1024))
-        out (sliding-pub in)
-        session (assoc (:session msg)
-                  :status :connected
-                  :in in
-                  :out out)]
-    (swap! +sessions+ assoc (:id session) session)))
+        pub (sliding-pub in)
+        sid (get-in msg [:session :id])
+        session (atom (assoc (:session msg)
+                        :status :connecting
+                        :in in
+                        :pub pub
+                        :snapshots []
+                        :context ctx))]
+    (go (<! (sub pub :disconnect (chan 1)))
+        (swap! +sessions+ dissoc sid))
+    
+    (swap! +sessions+ assoc sid session)))
 
-(defn disconnect
-  [sender]
-  (swap! sessions dissoc sender))
+(defmethod handle-client-op :login
+  [^ChannelHandlerContext ctx msg]
+  (let [{:keys [account password-hash] :as packet} (:packet msg)]
+    )
+  ;; (go (if (true? (<! (ensure-ack ctx (assoc msg :packet {:op :auth}))))
+  ;;       (swap! session assoc :status :connected)
+  ;;       (swap! +sessions+ dissoc sid)))
+  )
+
+(defmethod handle-client-op :ack
+  [^ChannelHandlerContext ctx msg]
+  (put! (get-in msg [:session :in]) msg))
 
 (defmethod handle-client-op :disconnect
   [^ChannelHandlerContext ctx msg]
-  (disconnect (:sender msg)))
+  (put! (get-in msg [:session :in]) msg))
 
 (defmethod handle-client-op :ping
   [^ChannelHandlerContext ctx msg]
-  (let [ping-future (future-chan (.write ctx {:op :pong}))]
-    (go (<! ping-future)
-        (let [ping (:ping (get-session (:sender msg)))
-              t (a/timeout 2000)]
-          (when-some [[val ch] (alts! [ping t])]
-            (condp identical? ch
-              ping (log/info "PING SUCCESSFUL")
-              t (disconnect (:sender msg))))))))
+  (let [ping-future (future-chan (.write ctx (assoc msg :packet {:op :pong})))]
+    ))
 
 (defmethod handle-client-op :pong
   [^ChannelHandlerContext ctx msg]
-  (put! (:ping (get-session (:sender msg))) true))
+  )
 
 (defmethod handle-client-op :default
   [^ChannelHandlerContext ctx msg]
   (log/warn "Unimplemented op" (:packet msg)))
 
-(defn update-session
+(defn update-session!
   [{:keys [id] :as session}]
   (get (swap! +sessions+ update-in [id] merge session) id))
 
@@ -90,7 +123,10 @@
       (.flush ctx))
     (^void messageReceived [^ChannelHandlerContext ctx msg]
       (if (contains? @+sessions+ (get-in msg [:session :id]))
-        (handle-client-op ctx (update-in msg [:session] update-session))
+        (let [msg (-> (assoc-in msg [:session :ctx] ctx)
+                      (update-in [:session] update-session!))]
+          (do (put! (get-in msg [:session :in]) msg)
+              (handle-client-op ctx msg)))
         (handle-client-op ctx msg)))
     (^void exceptionCaught [^ChannelHandlerContext ctx ^Throwable t]
       (log/error t (.getMessage t))

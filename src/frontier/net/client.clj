@@ -115,7 +115,9 @@
                              :id (rand-int Integer/MAX_VALUE)}]
                 (reset! +session+ session)
                 (.writeAndFlush ch {:session session
-                                    :packet {:op :connect}}))))
+                                    :packet {:op :connect}})
+                (<! (future-chan (.closeFuture ch)))
+                (.shutdownGracefully ^NioEventLoopGroup group))))
         (alter-var-root #'+client+ (constantly client))
         client)
       this))
