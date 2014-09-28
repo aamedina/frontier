@@ -6,21 +6,15 @@
             [frontier.net.client :refer [client-socket]]
             [frontier.game.client :refer [map->GameClient +game-client+]]
             [clojure.edn :as edn])
-  (:import (com.googlecode.lanterna TerminalFacade)
-           (com.googlecode.lanterna.terminal Terminal)
-           (com.googlecode.lanterna.gui Action GUIScreen)
-           (com.googlecode.lanterna.gui.dialog TextInputDialog FileDialog
-                                               ActionListDialog ListSelectDialog
-                                               WaitingDialog MessageBox
-                                               DialogResult DialogButtons)
-           (com.googlecode.lanterna.screen Screen)
-           (io.netty.channel ChannelOption)
-           (java.nio.charset Charset)
-           (java.net InetSocketAddress)))
+  (:import (java.net InetSocketAddress)))
 
 (set! *warn-on-reflection* true)
 
-(defonce +config+ (edn/read-string (slurp (io/resource "config.edn"))))
+(defonce +config+
+  (let [{:keys [^String remote-host ^int remote-port] :as config}
+        (edn/read-string (slurp (io/resource "config.edn")))]
+    (assoc config
+      :remote-address (InetSocketAddress. remote-host remote-port))))
 
 (defn client-system
   [address]
@@ -29,12 +23,9 @@
    :client (c/using (map->GameClient {}) [:socket])))
 
 (defn init
-  "Creates and initializes the system under development in the Var
-  #'system."
   []
-  (let [address (InetSocketAddress. ^String (:remote-host +config+)
-                                    ^int (:remote-port +config+))]
-    (alter-var-root #'+game-client+ (fnil identity (client-system address)))))
+  (->> (fnil identity (client-system (:remote-address +config+)))
+       (alter-var-root #'+game-client+)))
 
 (defn start [] (alter-var-root #'+game-client+ c/start-system))
 (defn stop [] (alter-var-root #'+game-client+ c/stop-system))
