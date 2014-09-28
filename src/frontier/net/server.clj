@@ -7,7 +7,8 @@
             [frontier.net.async :refer [future-chan]]
             [frontier.util.redis :as redis]
             [clojure.java.io :as io]
-            [taoensso.nippy :as nippy :refer [freeze thaw]])
+            [taoensso.nippy :as nippy :refer [freeze thaw]]
+            [crypto.password.scrypt :as scrypt])
   (:import (io.netty.bootstrap Bootstrap)
            (io.netty.channel ChannelOption ChannelInitializer ChannelFuture
                              ChannelPipeline ChannelHandlerAdapter

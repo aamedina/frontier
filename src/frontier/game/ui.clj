@@ -1,12 +1,21 @@
 (ns frontier.game.ui
-  (:require [clojure.java.io :as io])
-  (:import (com.googlecode.lanterna TerminalFacade)
-           (com.googlecode.lanterna.terminal Terminal)
-           (com.googlecode.lanterna.gui Action GUIScreen)
+  (:require [clojure.java.io :as io]
+            [crypto.password.scrypt :as scrypt]
+            [clojure.tools.logging :as log]
+            [clojure.core.async :as a :refer [go-loop <! >! put! chan take!
+                                              thread <!! >!!]])
+  (:import (com.googlecode.lanterna.terminal Terminal)
+           (com.googlecode.lanterna.gui Action GUIScreen Window Theme
+                                        Interactable$Result
+                                        Interactable$FocusChangeDirection
+                                        Component$Alignment GUIScreen$Position)
            (com.googlecode.lanterna.gui.dialog TextInputDialog FileDialog
                                                ActionListDialog ListSelectDialog
                                                WaitingDialog MessageBox
                                                DialogResult DialogButtons)
+           (com.googlecode.lanterna.gui.component TextBox Button PasswordBox
+                                                  SpinningActivityIndicator)
+           (com.googlecode.lanterna.gui.layout LayoutParameter)
            (com.googlecode.lanterna.screen Screen)
            (io.netty.channel ChannelOption)
            (java.nio.charset Charset)
@@ -45,3 +54,35 @@
   [owner title description list-width & items]
   (ListSelectDialog/showDialog owner title description list-width
                                (into-array items)))
+
+(defn button
+  ([text]
+     (Button. text))
+  ([text f]
+     (Button. text (reify Action (doAction [this] (f))))))
+
+(defn add-component!
+  ([window component]
+     (.addComponent window component (into-array LayoutParameter []))))
+
+(defn login-window
+  []
+  (let [window (proxy [Window] ["Login Window"])]
+    (doto window
+      (add-component! (button "Button with no action"))
+      (add-component! (button "Button with action"
+                              #(log/info "I'm a callback!")))
+      (add-component! (button "Close" #(.close window))))))
+
+(definline ->position
+  [pos]
+  `(case ~pos
+     :center GUIScreen$Position/CENTER
+     :full-screen GUIScreen$Position/FULL_SCREEN
+     :overlapping GUIScreen$Position/OVERLAPPING
+     :new-corner-window GUIScreen$Position/NEW_CORNER_WINDOW))
+
+(defn show-window!
+  [gui window position]
+  (thread
+    @(future (.showWindow gui window (->position position)))))

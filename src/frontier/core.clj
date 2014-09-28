@@ -4,11 +4,13 @@
             [clojure.tools.namespace.repl :refer [refresh]]
             [clojure.java.io :as io]
             [frontier.net.client :refer [client-socket]]
-            [frontier.game.client :refer [map->GameClient +game-client+]]
+            [frontier.game.client :refer [map->GameClient]]
             [clojure.edn :as edn])
   (:import (java.net InetSocketAddress)))
 
 (set! *warn-on-reflection* true)
+
+(defonce system nil)
 
 (defonce +config+
   (let [{:keys [^String remote-host ^int remote-port] :as config}
@@ -17,17 +19,14 @@
       :remote-address (InetSocketAddress. remote-host remote-port))))
 
 (defn client-system
-  [address]
-  (c/system-map
-   :socket (client-socket address)
-   :client (c/using (map->GameClient {}) [:socket])))
-
-(defn init
   []
-  (->> (fnil identity (client-system (:remote-address +config+)))
-       (alter-var-root #'+game-client+)))
+  (c/system-map
+   ;; :socket (client-socket (:remote-address +config+))
+   ;; :client (c/using (map->GameClient {}) [:socket])
+   :client (map->GameClient {})))
 
-(defn start [] (alter-var-root #'+game-client+ c/start-system))
-(defn stop [] (alter-var-root #'+game-client+ c/stop-system))
+(defn init [] (alter-var-root #'system (fnil identity (client-system))))
+(defn start [] (alter-var-root #'system c/start-system))
+(defn stop [] (alter-var-root #'system c/stop-system))
 (defn go [] (init) (start) :ready)
 (defn reset [] (stop) (refresh :after 'frontier.core/go))
