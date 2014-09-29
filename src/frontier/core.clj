@@ -19,12 +19,14 @@
     (assoc config
       :remote-address (InetSocketAddress. remote-host remote-port))))
 
-(defn client
+(defn client-system
   []
-  (map->GameClient {:sockets {:login (login-client)}}))
+  (c/system-map
+   :login-socket (login-client)
+   :game-client (c/using (map->GameClient {}) [:login-socket])))
 
-(defn init [] (alter-var-root #'system (fnil identity (client))))
-(defn start [] (alter-var-root #'system c/start))
-(defn stop [] (alter-var-root #'system c/stop))
+(defn init [] (alter-var-root #'system (fnil identity (client-system))))
+(defn start [] (alter-var-root #'system c/start-system))
+(defn stop [] (alter-var-root #'system c/stop-system))
 (defn go [] (init) (start) :ready)
 (defn reset [] (stop) (refresh :after 'frontier.core/go))
