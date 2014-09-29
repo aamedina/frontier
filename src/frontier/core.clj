@@ -25,7 +25,7 @@
    :login-socket (login-client)
    :game-client (c/using (map->GameClient {}) [:login-socket])))
 
-(defn init [] (alter-var-root #'system (fnil identity (client-system))))
+(defn init [] (alter-var-root #'system (fn [_] (client-system))))
 (defn start [] (alter-var-root #'system c/start-system))
 (defn stop [] (alter-var-root #'system c/stop-system))
 (defn go [] (init) (start) :ready)

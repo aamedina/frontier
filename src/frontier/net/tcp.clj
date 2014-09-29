@@ -2,7 +2,8 @@
   (:require [taoensso.nippy :refer [freeze thaw]]
             [clojure.core.async :as a :refer [go go-loop <! >! put! chan alts!]]
             [com.stuartsierra.component :as c]
-            [frontier.net.async :refer [future-chan]])
+            [frontier.net.async :refer [future-chan]]
+            [clojure.tools.logging :as log])
   (:import (io.netty.bootstrap Bootstrap ServerBootstrap)
            (io.netty.channel ChannelHandlerContext ChannelFuture)
            (io.netty.handler.codec ByteToMessageCodec CorruptedFrameException)
@@ -18,16 +19,15 @@
   (proxy [ByteToMessageCodec] []
     (^void decode [^ChannelHandlerContext ctx ^ByteBuf msg ^List out]
       (let [msg (let [arr (byte-array (.readableBytes msg))]
-                      (.getBytes msg 0 arr)
+                      (.readBytes msg arr)
                       (thaw arr))]
         (if (and (map? msg) (contains? msg :op) (contains? msg :id))
           (.add out msg)
           (throw (CorruptedFrameException. "Invalid login message decoded")))))
-    (^void encode [^ChannelHandlerContext ctx msg ^List out]
+    (^void encode [^ChannelHandlerContext ctx msg ^ByteBuf out]
       (if (and (map? msg) (contains? msg :op) (contains? msg :id))
         (let [frozen (freeze msg)]
-          (.add out (doto (.buffer (.alloc ctx) (alength frozen))
-                      (.writeBytes frozen))))
+          (doto out (.writeBytes frozen)))
         (throw (CorruptedFrameException. "Invalid outgoing login message"))))))
 
 (defrecord TCPServer [^NioEventLoopGroup bosses
@@ -57,15 +57,18 @@
 
 (defrecord TCPClient [^NioEventLoopGroup group
                       ^Bootstrap bootstrap
-                      ^InetSocketAddress address
-                      ^ChannelFuture bind-future]
+                      ^InetSocketAddress remote-address
+                      ^ChannelFuture bind-future
+                      in events]
   c/Lifecycle
   (start [this]
     (if (nil? bind-future)
-      (let [bind-future (.bind bootstrap address)
+      (let [connect-future (.connect bootstrap remote-address)
             client (assoc this
                      :bind-future bind-future)]
-        (go (when-some [future (<! (future-chan bind-future))]
+        (go (when-some [future (<! (future-chan connect-future))]
+              (put! in {:op :connect
+                        :channel (.channel ^ChannelFuture future)})
               (<! (future-chan (.closeFuture (.channel ^ChannelFuture future))))
               (c/stop this)))
         client)

@@ -39,6 +39,6 @@
         game-client)
       (do (.startScreen screen) this)))
   (stop [this]
-    (when screen
-      (.stopScreen screen))
-    this))
+    (if screen
+      (do (.stopScreen screen) this)
+      (assoc this :term nil :gui nil :screen nil))))

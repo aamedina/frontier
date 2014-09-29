@@ -27,11 +27,11 @@
   "Creates and initializes the system under development in the Var
   #'system."
   []
-  (alter-var-root #'system (fnil identity (c/system-map
-                                           ;; :server (game-server)
-                                           :login-server (login-server)
-                                           ;; :db (map->Database {:uri uri})
-                                           ))))
+  (alter-var-root #'system (fn [_]
+                             (c/system-map
+                              ;; :server (game-server)
+                              :login-server (login-server)
+                              :db (map->Database {:uri uri})))))
 
 (defn start
   "Starts the system running, updates the Var #'system."

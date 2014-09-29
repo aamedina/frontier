@@ -79,35 +79,44 @@
 
 (defn login-window
   []
-  (let [window (proxy [Window] ["CAPTAIN AUTHENTICATION"])
+  (let [window (proxy [Window] ["LOG IN"])
         login-panel (Panel. (Border$Invisible.) Panel$Orientation/VERTICAL)
         edit-panel (Panel. (Border$Invisible.) Panel$Orientation/HORISONTAL)
         button-panel (Panel. (Border$Invisible.) Panel$Orientation/HORISONTAL)
         account-input (TextBox. "" 20)
         password-input (PasswordBox. "" 20)
         auth (chan 1)]
+    
     (doto edit-panel
       (add-component! (Label. "USERNAME: "))
       (add-component! account-input)
       (add-component! (Label. "PASSWORD: "))
       (add-component! password-input))
+    
     (doto login-panel
       (add-component! edit-panel))
+    
     (doto button-panel
-      (add-component! (EmptySpace. 20 1))
-      (add-component! (button "OK" (fn []
-                                    (put! auth {:account-name
-                                                (.getText account-input)
-                                                :password
-                                                (-> (.getText password-input)
-                                                    (scrypt/encrypt))}
-                                          (fn [_] (a/close! auth)))
-                                    (.close window)))))
+      (add-component! (button "BACK" (fn []
+                                       (a/close! auth)
+                                       (-> (.getOwner window)
+                                           .getScreen
+                                           .stopScreen)
+                                       (.close window))))
+      (add-component! (button "NEXT" (fn []
+                                       (put! auth {:account-name
+                                                   (.getText account-input)
+                                                   :password
+                                                   (-> (.getText password-input)
+                                                       (scrypt/encrypt))}
+                                             (fn [_] (a/close! auth)))
+                                       (.close window)))))
+    
     (doto window
       (add-component! login-panel)
       (add-component! button-panel))
-    {:window window
-     :auth auth}))
+    
+    {:window window :auth auth}))
 
 (definline ->position
   [pos]

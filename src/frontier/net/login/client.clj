@@ -11,7 +11,7 @@
            (io.netty.channel ChannelOption ChannelInitializer ChannelFuture
                              ChannelPipeline ChannelHandlerAdapter
                              ChannelHandlerContext ChannelHandler
-                             SimpleChannelInboundHandler Channel)
+                             SimpleChannelInboundHandler Channel ChannelPromise)
            (io.netty.channel.nio NioEventLoopGroup)
            (io.netty.channel.group ChannelGroup DefaultChannelGroup)
            (io.netty.handler.logging LoggingHandler LogLevel)
@@ -28,11 +28,9 @@
 (set! *warn-on-reflection* true)
 
 (defn login-client-handler
-  []
+  [^InetSocketAddress remote-address]
   (let [channels (DefaultChannelGroup. GlobalEventExecutor/INSTANCE)]
     (proxy [SimpleChannelInboundHandler] []
-      (^void channelReadComplete [^ChannelHandlerContext ctx]
-        (.flush ctx))
       (^void messageReceived [^ChannelHandlerContext ctx msg]
         (log/warn msg))
       (^void exceptionCaught [^ChannelHandlerContext ctx ^Throwable t]
@@ -40,27 +38,36 @@
         (.printStackTrace t)))))
 
 (defn login-client-pipeline
-  [^InetSocketAddress address]
+  [^InetSocketAddress remote-address]
   (proxy [ChannelInitializer] []
     (initChannel [^Channel ch]
       (let [trust-manager InsecureTrustManagerFactory/INSTANCE
             ssl-ctx (SslContext/newClientContext trust-manager)]
         (doto (.pipeline ch)
           (.addLast (into-array ChannelHandler
-                                [(.newHandler ssl-ctx (.alloc ch)
-                                              (.getHostName address)
-                                              (.getPort address))
+                                [(LoggingHandler. LogLevel/INFO)
+                                 (.newHandler ssl-ctx (.alloc ch)
+                                              (.getHostName remote-address)
+                                              (.getPort remote-address))
                                  (tcp-message-codec)
-                                 (login-client-handler)])))))))
+                                 (login-client-handler remote-address)])))))))
 
 (defn login-client
-  ([] (login-client (InetSocketAddress. 10091)))
-  ([address] (login-client address (login-client-pipeline address)))
-  ([address handler]
+  ([] (login-client (InetSocketAddress. "192.168.1.2" 9091)))
+  ([remote-address]
+     (login-client remote-address (login-client-pipeline remote-address)))
+  ([^InetSocketAddress remote-address handler]
      (let [group (NioEventLoopGroup.)
            bootstrap (doto (Bootstrap.)
                        (.group group)
+                       (.remoteAddress remote-address)
                        (.channel NioSocketChannel)
-                       (.handler handler))]
-       (->TCPClient group bootstrap address nil))))
+                       (.handler handler))
+           in (chan 1)
+           events (pub in :op)]
+       (go (let [{:keys [channel] :as msg} (<! (sub events :connect (chan 1)))]
+             (.writeAndFlush ^Channel channel
+                             {:op :connect
+                              :id (rand-int Integer/MAX_VALUE)})))
+       (->TCPClient group bootstrap remote-address nil in events))))
 

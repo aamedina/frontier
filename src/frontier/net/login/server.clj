@@ -41,10 +41,13 @@
       (^void channelReadComplete [^ChannelHandlerContext ctx]
         (.flush ctx))
       (^void messageReceived [^ChannelHandlerContext ctx msg]
-        (log/warn msg))
+        (case (:op msg)
+          :connect )
+        (log/info "hello?")
+        (log/info msg))
       (^void exceptionCaught [^ChannelHandlerContext ctx ^Throwable t]
-        (log/error t (.getMessage t))
-        (.printStackTrace t)))))
+        (.printStackTrace t)
+        (.close ctx)))))
 
 (defn login-server-pipeline
   []
@@ -55,7 +58,8 @@
                                                  (.privateKey ssc))]
         (doto (.pipeline ch)
           (.addLast (into-array ChannelHandler
-                                [(.newHandler ssl-ctx (.alloc ch))
+                                [(LoggingHandler. LogLevel/INFO)
+                                 (.newHandler ssl-ctx (.alloc ch))
                                  (tcp-message-codec)
                                  (login-server-handler)])))))))
 
@@ -68,7 +72,6 @@
            bootstrap (doto (ServerBootstrap.)
                        (.group bosses workers)
                        (.channel NioServerSocketChannel)
-                       (.handler (LoggingHandler. LogLevel/INFO))
                        (.childHandler handler))]
        (->TCPServer bosses workers bootstrap address nil))))
 
