@@ -22,7 +22,7 @@
                        sockets]
   c/Lifecycle
   (start [this]
-    (if (nil? screen)
+    (if (nil? term)
       (let [term (TerminalFacade/createTerminal)
             gui (TerminalFacade/createGUIScreen term)
             screen (.getScreen gui)

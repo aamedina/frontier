@@ -24,7 +24,7 @@
   (map->GameClient {:sockets {:login (login-client)}}))
 
 (defn init [] (alter-var-root #'system (fnil identity (client))))
-(defn start [] (alter-var-root #'system c/start-system))
-(defn stop [] (alter-var-root #'system c/stop-system))
+(defn start [] (alter-var-root #'system c/start))
+(defn stop [] (alter-var-root #'system c/stop))
 (defn go [] (init) (start) :ready)
 (defn reset [] (stop) (refresh :after 'frontier.core/go))
