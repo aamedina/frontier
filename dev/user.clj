@@ -13,7 +13,8 @@
    [clojure.tools.namespace.repl :refer [refresh refresh-all]]
    [com.stuartsierra.component :as c]
    [frontier.db :refer [map->Database]]
-   [frontier.net.server :refer :all]))
+   [frontier.net.server :refer :all]
+   [frontier.net.login.server :refer [login-server]]))
 
 (def system
   "A Var containing an object representing the application under
@@ -27,8 +28,10 @@
   #'system."
   []
   (alter-var-root #'system (fnil identity (c/system-map
-                                           :server (game-server)
-                                           :db (map->Database {:uri uri})))))
+                                           ;; :server (game-server)
+                                           :login-server (login-server)
+                                           ;; :db (map->Database {:uri uri})
+                                           ))))
 
 (defn start
   "Starts the system running, updates the Var #'system."

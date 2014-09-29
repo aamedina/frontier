@@ -16,12 +16,10 @@
            (io.netty.channel ChannelOption)
            (java.nio.charset Charset)))
 
-(defonce +game-client+ nil)
-
 (defrecord GameClient [^Terminal term
                        ^GUIScreen gui
                        ^Screen screen
-                       socket]
+                       sockets]
   c/Lifecycle
   (start [this]
     (if (nil? screen)
@@ -33,7 +31,6 @@
                           :gui gui
                           :screen screen)]
         (.startScreen screen)
-        (alter-var-root #'+game-client+ (constantly game-client))
         (thread
           (let [{:keys [window auth]} (ui/login-window)]
             (ui/show-window! game-client window :center)
@@ -45,12 +42,3 @@
     (when screen
       (.stopScreen screen))
     this))
-
-(defn init
-  []
-  (alter-var-root #'+game-client+ (fn [_] (c/start (map->GameClient {})))))
-
-(defn reset
-  []
-  (c/stop +game-client+)
-  (refresh :after 'frontier.game.client/init))

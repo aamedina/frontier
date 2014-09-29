@@ -4,6 +4,7 @@
             [clojure.tools.namespace.repl :refer [refresh]]
             [clojure.java.io :as io]
             [frontier.net.client :refer [client-socket]]
+            [frontier.net.login.client :refer [login-client]]
             [frontier.game.client :refer [map->GameClient]]
             [clojure.edn :as edn])
   (:import (java.net InetSocketAddress)))
@@ -18,14 +19,11 @@
     (assoc config
       :remote-address (InetSocketAddress. remote-host remote-port))))
 
-(defn client-system
+(defn client
   []
-  (c/system-map
-   ;; :socket (client-socket (:remote-address +config+))
-   ;; :client (c/using (map->GameClient {}) [:socket])
-   :client (map->GameClient {})))
+  (map->GameClient {:sockets {:login (login-client)}}))
 
-(defn init [] (alter-var-root #'system (fnil identity (client-system))))
+(defn init [] (alter-var-root #'system (fnil identity (client))))
 (defn start [] (alter-var-root #'system c/start-system))
 (defn stop [] (alter-var-root #'system c/stop-system))
 (defn go [] (init) (start) :ready)

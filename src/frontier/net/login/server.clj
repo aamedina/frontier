@@ -28,8 +28,6 @@
 
 (set! *warn-on-reflection* true)
 
-(defonce +server+ nil)
-
 (defn login-server-handler
   []
   (let [channels (DefaultChannelGroup. GlobalEventExecutor/INSTANCE)]
@@ -43,7 +41,7 @@
       (^void channelReadComplete [^ChannelHandlerContext ctx]
         (.flush ctx))
       (^void messageReceived [^ChannelHandlerContext ctx msg]
-        )
+        (log/warn msg))
       (^void exceptionCaught [^ChannelHandlerContext ctx ^Throwable t]
         (log/error t (.getMessage t))
         (.printStackTrace t)))))
