@@ -1,4 +1,10 @@
 {:remote-host "192.168.1.2"
  :remote-port 9090
 
+ :login-host "192.168.1.2"
+ :login-port 9091
+
+ :chat-host "192.168.1.2"
+ :chat-port 9092
+
  :db-uri "datomic:cass://127.0.0.1:9042/datomic.datomic/frontier"}

@@ -6,15 +6,19 @@
                                               thread <!! >!!]])
   (:import (com.googlecode.lanterna.terminal Terminal)
            (com.googlecode.lanterna.gui Action GUIScreen Window Theme
-                                        Interactable$Result
+                                        Interactable$Result 
                                         Interactable$FocusChangeDirection
-                                        Component$Alignment GUIScreen$Position)
+                                        Component$Alignment GUIScreen$Position
+                                        Border$Bevel Border$Invisible
+                                        Border$Standard)
            (com.googlecode.lanterna.gui.dialog TextInputDialog FileDialog
                                                ActionListDialog ListSelectDialog
                                                WaitingDialog MessageBox
                                                DialogResult DialogButtons)
            (com.googlecode.lanterna.gui.component TextBox Button PasswordBox
-                                                  SpinningActivityIndicator)
+                                                  SpinningActivityIndicator
+                                                  Panel EmptySpace Label
+                                                  Panel$Orientation)
            (com.googlecode.lanterna.gui.layout LayoutParameter)
            (com.googlecode.lanterna.screen Screen)
            (io.netty.channel ChannelOption)
@@ -55,6 +59,14 @@
   (ListSelectDialog/showDialog owner title description list-width
                                (into-array items)))
 
+(defn text-box
+  []
+  (TextBox.))
+
+(defn password-box
+  []
+  (PasswordBox.))
+
 (defn button
   ([text]
      (Button. text))
@@ -67,12 +79,35 @@
 
 (defn login-window
   []
-  (let [window (proxy [Window] ["Login Window"])]
+  (let [window (proxy [Window] ["CAPTAIN AUTHENTICATION"])
+        login-panel (Panel. (Border$Invisible.) Panel$Orientation/VERTICAL)
+        edit-panel (Panel. (Border$Invisible.) Panel$Orientation/HORISONTAL)
+        button-panel (Panel. (Border$Invisible.) Panel$Orientation/HORISONTAL)
+        account-input (TextBox. "" 20)
+        password-input (PasswordBox. "" 20)
+        auth (chan 1)]
+    (doto edit-panel
+      (add-component! (Label. "USERNAME: "))
+      (add-component! account-input)
+      (add-component! (Label. "PASSWORD: "))
+      (add-component! password-input))
+    (doto login-panel
+      (add-component! edit-panel))
+    (doto button-panel
+      (add-component! (EmptySpace. 20 1))
+      (add-component! (button "OK" (fn []
+                                    (put! auth {:account-name
+                                                (.getText account-input)
+                                                :password
+                                                (-> (.getText password-input)
+                                                    (scrypt/encrypt))}
+                                          (fn [_] (a/close! auth)))
+                                    (.close window)))))
     (doto window
-      (add-component! (button "Button with no action"))
-      (add-component! (button "Button with action"
-                              #(log/info "I'm a callback!")))
-      (add-component! (button "Close" #(.close window))))))
+      (add-component! login-panel)
+      (add-component! button-panel))
+    {:window window
+     :auth auth}))
 
 (definline ->position
   [pos]
@@ -83,6 +118,9 @@
      :new-corner-window GUIScreen$Position/NEW_CORNER_WINDOW))
 
 (defn show-window!
-  [gui window position]
+  [{:keys [gui screen]} window position]
   (thread
-    @(future (.showWindow gui window (->position position)))))
+    (.showWindow gui window (->position position))
+    (doto screen
+      (.clear)
+      (.refresh))))

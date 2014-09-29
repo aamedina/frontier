@@ -1,6 +1,8 @@
 (ns frontier.game.client
-  (:require [clojure.core.async :as a :refer [go-loop <! >! put! chan take!]]
+  (:require [clojure.core.async :as a :refer [go-loop <! >! put! chan take!
+                                              thread <!! >!!]]
             [com.stuartsierra.component :as c]
+            [clojure.tools.logging :as log]
             [clojure.tools.namespace.repl :refer [refresh]]
             [clojure.java.io :as io]
             [frontier.net.client :refer [client-socket]]
@@ -23,7 +25,7 @@
   c/Lifecycle
   (start [this]
     (if (nil? screen)
-      (let [term (TerminalFacade/createUnixTerminal)
+      (let [term (TerminalFacade/createTerminal)
             gui (TerminalFacade/createGUIScreen term)
             screen (.getScreen gui)
             game-client (assoc this
@@ -32,7 +34,11 @@
                           :screen screen)]
         (.startScreen screen)
         (alter-var-root #'+game-client+ (constantly game-client))
-        (ui/show-window! gui (ui/login-window) :center)
+        (thread
+          (let [{:keys [window auth]} (ui/login-window)]
+            (ui/show-window! game-client window :center)
+            (println (<!! auth))
+            (c/stop this)))
         game-client)
       (do (.startScreen screen) this)))
   (stop [this]
