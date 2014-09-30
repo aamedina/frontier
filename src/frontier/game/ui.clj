@@ -3,14 +3,17 @@
             [crypto.password.scrypt :as scrypt]
             [clojure.tools.logging :as log]
             [clojure.core.async :as a :refer [go-loop <! >! put! chan take!
-                                              thread <!! >!!]])
-  (:import (com.googlecode.lanterna.terminal Terminal)
+                                              thread <!! >!!]]
+            [frontier.game.theme :as t])
+  (:import (com.googlecode.lanterna.terminal Terminal Terminal$Color
+                                             Terminal$SGR TerminalPosition
+                                             TerminalSize)
            (com.googlecode.lanterna.gui Action GUIScreen Window Theme
                                         Interactable$Result 
                                         Interactable$FocusChangeDirection
                                         Component$Alignment GUIScreen$Position
                                         Border$Bevel Border$Invisible
-                                        Border$Standard)
+                                        Border$Standard TextGraphics)
            (com.googlecode.lanterna.gui.dialog TextInputDialog FileDialog
                                                ActionListDialog ListSelectDialog
                                                WaitingDialog MessageBox
@@ -23,7 +26,8 @@
            (com.googlecode.lanterna.screen Screen)
            (io.netty.channel ChannelOption)
            (java.nio.charset Charset)
-           (java.net InetSocketAddress)))
+           (java.net InetSocketAddress)
+           (java.awt Color)))
 
 (defn text-input
   [owner title description text]
@@ -68,10 +72,30 @@
   (PasswordBox.))
 
 (defn button
-  ([text]
-     (Button. text))
+  ([text] (button text (fn [])))
   ([text f]
-     (Button. text (reify Action (doAction [this] (f))))))
+     (let [label (doto (Label. text)
+                   (.setStyle (t/category :button-label-inactive)))]
+       (proxy [Button] [text (reify Action (doAction [this] (f)))]
+         (^void repaint [^TextGraphics graphics]
+           (if (.hasFocus this)
+             (.applyTheme graphics (t/get-theme graphics :button-active))
+             (.applyTheme graphics (t/get-theme graphics :button-inactive)))
+           (let [size (.calculatePreferredSize this)
+                 graphics (.transformAccordingToAlignment this graphics size)
+                 width (.getWidth graphics)
+                 cols (.getColumns size)]
+             (if (< width cols)
+               true
+               (let [left-pos (quot (- width cols) 2)
+                     label-size (.getPreferredSize label)
+                     sub-gfx (.subAreaGraphics
+                              graphics
+                              (TerminalPosition. (+ left-pos 2) 0)
+                              (TerminalSize. (.getColumns label-size)
+                                             (.getRows label-size)))]
+                 (.repaint label sub-gfx)))
+             (.setHotspot this nil)))))))
 
 (defn add-component!
   ([window component]
@@ -81,16 +105,16 @@
   []
   (let [window (proxy [Window] ["LOG IN"])
         login-panel (Panel. (Border$Invisible.) Panel$Orientation/VERTICAL)
-        edit-panel (Panel. (Border$Invisible.) Panel$Orientation/HORISONTAL)
+        edit-panel (Panel. (Border$Invisible.) Panel$Orientation/VERTICAL)
         button-panel (Panel. (Border$Invisible.) Panel$Orientation/HORISONTAL)
         account-input (TextBox. "" 20)
         password-input (PasswordBox. "" 20)
         auth (chan 1)]
     
     (doto edit-panel
-      (add-component! (Label. "USERNAME: "))
+      (add-component! (Label. "USERNAME"))
       (add-component! account-input)
-      (add-component! (Label. "PASSWORD: "))
+      (add-component! (Label. "PASSWORD"))
       (add-component! password-input))
     
     (doto login-panel
@@ -113,7 +137,9 @@
     
     (doto window
       (add-component! login-panel)
-      (add-component! button-panel))
+      (add-component! (EmptySpace.))
+      (add-component! button-panel)
+      (add-component! (EmptySpace.)))
     
     {:window window :auth auth}))
 

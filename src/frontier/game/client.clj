@@ -7,24 +7,33 @@
             [clojure.java.io :as io]
             [frontier.net.client :refer [client-socket]]
             [clojure.edn :as edn]
-            [frontier.game.ui :as ui])
+            [frontier.game.ui :as ui]
+            [frontier.game.theme :as t :refer [default-appearance]])
   (:import (com.googlecode.lanterna TerminalFacade)
-           (com.googlecode.lanterna.terminal Terminal Terminal$Color)
+           (com.googlecode.lanterna.terminal Terminal Terminal$Color
+                                             XTerm8bitIndexedColorUtils)
+           (com.googlecode.lanterna.terminal.swing SwingTerminal
+                                                   TerminalAppearance)
            (com.googlecode.lanterna.screen Screen ScreenWriter
                                            ScreenCharacterStyle)
            (com.googlecode.lanterna.gui GUIScreen GUIScreen$Position)
            (io.netty.channel ChannelOption)
-           (java.nio.charset Charset)))
+           (java.nio.charset Charset)
+           (java.awt Color)))
 
-(defrecord GameClient [^Terminal term
+(defrecord GameClient [^SwingTerminal term
                        ^GUIScreen gui
                        ^Screen screen
                        login-client]
   c/Lifecycle
   (start [this]
     (if (nil? term)
-      (let [term (TerminalFacade/createTerminal)
-            gui (TerminalFacade/createGUIScreen term)
+      (let [term (doto (TerminalFacade/createSwingTerminal default-appearance
+                                                           120 40)
+                   (t/set-foreground! (Color/decode "#DCDCCC"))
+                   (t/set-background! (Color/decode "#3F3F3F")))
+            gui (doto (TerminalFacade/createGUIScreen term)
+                  (.setTheme (t/zenburn-theme)))
             screen (.getScreen gui)
             game-client (assoc this
                           :term term
