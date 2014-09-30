@@ -107,8 +107,7 @@
                                        (put! auth {:account-name
                                                    (.getText account-input)
                                                    :password
-                                                   (-> (.getText password-input)
-                                                       (scrypt/encrypt))}
+                                                   (.getText password-input)}
                                              (fn [_] (a/close! auth)))
                                        (.close window)))))
     

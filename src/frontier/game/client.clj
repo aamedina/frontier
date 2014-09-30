@@ -19,7 +19,7 @@
 (defrecord GameClient [^Terminal term
                        ^GUIScreen gui
                        ^Screen screen
-                       login-socket]
+                       login-client]
   c/Lifecycle
   (start [this]
     (if (nil? term)

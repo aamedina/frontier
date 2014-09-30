@@ -24,7 +24,8 @@
            (io.netty.buffer ByteBuf)
            (io.netty.handler.ssl SslContext SslHandler)
            (io.netty.handler.ssl.util SelfSignedCertificate)
-           (java.net SocketAddress InetAddress InetSocketAddress)))
+           (java.net SocketAddress InetAddress InetSocketAddress)
+           (javax.net.ssl SSLEngine)))
 
 (set! *warn-on-reflection* true)
 
@@ -33,18 +34,30 @@
   (let [channels (DefaultChannelGroup. GlobalEventExecutor/INSTANCE)]
     (proxy [SimpleChannelInboundHandler] []
       (^void channelActive [^ChannelHandlerContext ctx]
-        (go (let [ctx ^ChannelHandlerContext ctx]
-              (<! (future-chan (-> (.pipeline ctx)
-                                   ^SslHandler (.get SslHandler)
-                                   (.handshakeFuture))))
+        (go (let [ctx ^ChannelHandlerContext ctx
+                  ssl ^SslHandler (.get (.pipeline ctx) SslHandler)]
+              (<! (future-chan (.handshakeFuture ssl)))
+              (log/info (str "Welcome to "
+                             (.getHostName (InetAddress/getLocalHost))
+                             " secure chat service\n!"))
+              (log/info (str "Your session is protected by"
+                             (-> (.engine ^SslHandler ssl)
+                                 (.getSession)
+                                 (.getCipherSuite)) 
+                             " cipher suite.\n"))
               (.add ^DefaultChannelGroup channels (.channel ctx)))))
       (^void channelReadComplete [^ChannelHandlerContext ctx]
         (.flush ctx))
       (^void messageReceived [^ChannelHandlerContext ctx msg]
+        (log/info msg)
         (case (:op msg)
-          :connect )
-        (log/info "hello?")
-        (log/info msg))
+          :connect (redis/add (:id msg) (dissoc msg :op))
+          :login (redis/update (:id msg) assoc :auth
+                               {:username (:username msg)
+                                :password (:password msg)})
+          :logout (do (redis/remove (:id msg) (dissoc msg :op))
+                      (.close ctx))
+          (log/error msg)))
       (^void exceptionCaught [^ChannelHandlerContext ctx ^Throwable t]
         (.printStackTrace t)
         (.close ctx)))))
@@ -72,6 +85,7 @@
            bootstrap (doto (ServerBootstrap.)
                        (.group bosses workers)
                        (.channel NioServerSocketChannel)
+                       (.handler (LoggingHandler. LogLevel/INFO))
                        (.childHandler handler))]
        (->TCPServer bosses workers bootstrap address nil))))
 
