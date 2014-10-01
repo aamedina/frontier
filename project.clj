@@ -20,7 +20,6 @@
                  [com.stuartsierra/component "0.2.2"
                   :exclusions [org.clojure/tools.namespace]]
                  [seesaw "1.4.5-SNAPSHOT"]
-                 [com.googlecode.lanterna/lanterna "2.1.9"]
                  [com.taoensso/carmine "2.7.0"
                   :exclusions [org.clojure/clojure]]
                  [crypto-password "0.1.3"]
