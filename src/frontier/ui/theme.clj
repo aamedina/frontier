@@ -1,13 +1,4 @@
-(ns frontier.game.theme
-  (:require [clojure.string :as str]
-            [clojure.java.io :as io])
-  (:import (java.awt Font Color GraphicsEnvironment)))
-
-(defonce graphics-environment
-  (GraphicsEnvironment/getLocalGraphicsEnvironment))
-
-(defonce graphics-device
-  (.getDefaultScreenDevice graphics-environment))
+(ns frontier.ui.theme)
 
 (def ^{:doc "Zenburn colors sourced from bbatsov's awesome theme for Emacs: 
              https://github.com/bbatsov/zenburn-emacs"}
@@ -49,3 +40,8 @@
    "zenburn-blue-5"    "#366060"
    "zenburn-magenta"   "#DC8CC3"})
 
+(def zenburn-theme
+  {:default {:foreground (get zenburn-colors "zenburn-fg")
+             :background (get zenburn-colors "zenburn-bg")
+             :highlight false
+             :underline false}})

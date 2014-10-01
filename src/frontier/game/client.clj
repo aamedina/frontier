@@ -23,4 +23,3 @@
     (if frame
       this
       this)))
-
