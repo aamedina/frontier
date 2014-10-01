@@ -51,3 +51,4 @@
     (if screen
       (do (.stopScreen screen) this)
       (assoc this :term nil :gui nil :screen nil))))
+
