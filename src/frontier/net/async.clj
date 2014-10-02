@@ -3,17 +3,28 @@
              :refer [go go-loop <! >! put! chan close! buffer]]
             [clojure.core.async.impl.protocols :as impl])
   (:import (io.netty.channel ChannelHandlerContext ChannelOption ChannelFuture)
-           (io.netty.util.concurrent Future GenericFutureListener)))
+           (java.util.concurrent TimeUnit)
+           (io.netty.util.concurrent Future AbstractFuture
+                                     GenericFutureListener)))
 
 (set! *warn-on-reflection* true)
 
 (defn future-chan
   [^Future channel-future]
   (let [out (chan 1)]
-    (.addListener channel-future (reify GenericFutureListener
-                                   (operationComplete [_ future]
-                                     (put! out future
-                                           (fn [_] (a/close! out))))))
+    (if (and (not (instance? io.netty.util.concurrent.Future channel-future))
+             (instance? java.util.concurrent.Future channel-future))
+      (future-chan (proxy [AbstractFuture] []
+                     (get
+                       ([] @channel-future)
+                       ([timeout unit]
+                          (deref channel-future
+                                 (.convert TimeUnit/MILLISECONDS timeout unit)
+                                 nil)))))
+      (.addListener channel-future (reify GenericFutureListener
+                                     (operationComplete [_ future]
+                                       (put! out future
+                                             (fn [_] (a/close! out)))))))
     out))
 
 (defn double-buffered-chan

@@ -10,7 +10,8 @@
             [taoensso.nippy :as nippy :refer [freeze thaw]]
             [crypto.password.scrypt :as scrypt]
             [frontier.net.tcp :refer [tcp-message-codec ->TCPServer]]
-            [datomic.api :as db])
+            [datomic.api :as d :refer [q]]
+            [frontier.net.async :refer [future-chan]])
   (:import (io.netty.bootstrap ServerBootstrap)
            (io.netty.channel ChannelOption ChannelInitializer ChannelFuture
                              ChannelPipeline ChannelHandlerAdapter
@@ -30,12 +31,29 @@
 
 (set! *warn-on-reflection* true)
 
+(defn create-account
+  [conn msg]
+  (future-chan (d/transact-async
+                conn
+                [{:db/id #db/id [:db.part/db]
+                  :account/username (:username msg)
+                  :account/password (scrypt/encrypt (:password msg))}])))
+
+(defn find-account
+  [db username]
+  (when-let [eid (first (q '[:find ?e
+                             :in $ ?username
+                             :where [?e :account/username ?username]]
+                           db username))]
+    (d/entity db eid)))
+
 (defn login
-  [server ^ChannelHandlerContext ctx msg]
-  #_(redis/update (:id msg) assoc :auth
-                  {:username (:username msg)
-                   :password (:password msg)})
-  (log/info (:db server)))
+  [{:keys [db] :as server} ^ChannelHandlerContext ctx msg]
+  (go (let [{:keys [conn db]} db
+            auth? (if-let [account (find-account db (:username msg))]
+                    (scrypt/check (:password msg) (:account/password account))
+                    (do (<! (create-account conn msg)) true))]
+        auth?)))
 
 (defn logout
   [server ^ChannelHandlerContext ctx msg]

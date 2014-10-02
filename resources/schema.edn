@@ -1,0 +1,19 @@
+[{:db/id #db/id[db.part/db]
+  :db/ident :account/username
+  :db/index true
+  :db/valueType :db.type/string
+  :db/cardinality :db.cardinality/one
+  :db.install/_attribute :db.part/db}
+ 
+ {:db/id #db/id[db.part/db]
+  :db/ident :account/password
+  :db/valueType :db.type/string
+  :db/cardinality :db.cardinality/one
+  :db.install/_attribute :db.part/db}
+
+ {:db/id #db/id[db.part/db]
+  :db/ident :account/email
+  :db/index true
+  :db/valueType :db.type/string
+  :db/cardinality :db.cardinality/one
+  :db.install/_attribute :db.part/db}]
