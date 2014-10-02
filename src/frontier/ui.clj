@@ -7,7 +7,9 @@
             [clojure.tools.namespace.repl :refer [refresh]]
             [seesaw.core :as ui]
             [seesaw.border :as border]
-            [seesaw.cursor :as cursor])
+            [seesaw.cursor :as cursor]
+            [seesaw.color :as color]
+            [seesaw.mig :as mig])
   (:import (java.awt Font FontMetrics Color GraphicsEnvironment Insets)
            (java.awt.font TextAttribute)           
            (javax.swing UIManager)))
@@ -26,43 +28,55 @@
    :bold-italic (create-font "fonts/UbuntuMono-BI.ttf")})
 
 (defn label
-  [text & opts]
+  [& opts]
   (apply ui/label
-         :text text
-         :font (:regular fonts)
-         :foreground (t/zenburn-colors "zenburn-fg")
-         opts))
+         :font (:bold fonts)
+         :foreground "#F0DFAF"
+         :background "#3F3F3F" opts))
+
+(defn derive-font
+  [font new-size]
+  (.deriveFont font (float new-size)))
+
+(def h1 (comp #(ui/config! % :font (derive-font (:bold fonts) 36.0)) label))
+(def h2 (comp #(ui/config! % :font (derive-font (:bold fonts) 28.0)) label))
+(def h3 (comp #(ui/config! % :font (derive-font (:bold fonts) 24.0)) label))
+(def h4 (comp #(ui/config! % :font (derive-font (:bold fonts) 20.0)) label))
+(def h5 (comp #(ui/config! % :font (derive-font (:bold fonts) 16.0)) label))
+
+(defn button-border
+  []
+  (border/to-border (border/line-border :color "#DCDCDC"
+                                        :top 2 :left 2 :right 0 :bottom 0)
+                    (border/line-border :color "#949494"
+                                        :top 0 :left 0 :right 2 :bottom 2)))
+
+(defn focused-border
+  []
+  (border/to-border (border/line-border :color "#949494"
+                                        :top 2 :left 2 :right 0 :bottom 0)
+                    (border/line-border :color "#DCDCDC"
+                                        :top 0 :left 0 :right 2 :bottom 2)))
 
 (defn button
-  ([text] (button text :left))
-  ([text align] (button text align nil))
-  ([text align action]
-     (ui/button :text (str " " text " ")
-                :halign align
+  [& {:as opts}]
+  (apply ui/button
+         (->> (assoc opts
+                :text (str " " (:text opts) " ")
                 :cursor (cursor/cursor :hand)
-                :border (border/line-border
-                         :color "#949494"
-                         :top 0 :left 0 :right 2 :bottom 2)
-                :font (:regular fonts)
+                :border (button-border)
+                :font (:bold fonts)
                 :listen [:mouse-entered #(ui/config! % :background "#E5E5E5")
                          :mouse-exited #(ui/config! % :background "#D3D3D3")
-                         :mouse-pressed #(ui/config! % :background "#898989")
-                         :mouse-released #(ui/config! % :background "#D3D3D3")
-                         :mouse-clicked (fn [this] (when action (action)))]
+                         :mouse-pressed #(ui/config! % :border (focused-border))
+                         :mouse-released #(ui/config! % :border (button-border))
+                         :mouse-clicked (fn [this]
+                                          (when-let [f (:action opts)] (f)))
+                         :focus-gained #(ui/config! % :background "#E5E5E5")
+                         :focus-lost #(ui/config! % :background "#D3D3D3")]
                 :background "#D3D3D3"
-                :foreground (t/zenburn-colors "zenburn-bg"))))
-
-(defn vertical-panel
-  [& items]
-  (ui/vertical-panel :items (into [] items)
-                     :foreground (t/zenburn-colors "zenburn-fg")
-                     :background (t/zenburn-colors "zenburn-bg")))
-
-(defn horizontal-panel
-  [& items]
-  (ui/horizontal-panel :items (into [] items)
-                       :foreground (t/zenburn-colors "zenburn-fg")
-                       :background (t/zenburn-colors "zenburn-bg")))
+                :foreground (t/zenburn-colors "zenburn-bg"))
+              (reduce into []))))
 
 (defn text
   [& {:keys [text columns rows] :as opts}]
@@ -95,13 +109,70 @@
                :foreground (t/zenburn-colors "zenburn-fg")
                :background "#696969"))
 
-(def content
-  (vertical-panel
-   (label "Log In" :halign :left)
-   (horizontal-panel (label "Username") (text))
-   (horizontal-panel (label "Password") (password))
-   (horizontal-panel (button "Back" :left) (button "Next" :right))))
+(defn vertical-panel
+  [& opts]
+  (apply ui/vertical-panel
+         :font (:bold fonts)
+         :foreground (t/zenburn-colors "zenburn-fg")
+         :background (t/zenburn-colors "zenburn-bg") opts))
 
-(def main-frame
-  (ui/pack! (ui/frame :title "Frontier"
-                      :content content)))
+(defn horizontal-panel
+  [& opts]
+  (apply ui/horizontal-panel
+         :font (:bold fonts)
+         :foreground (t/zenburn-colors "zenburn-fg")
+         :background (t/zenburn-colors "zenburn-bg") opts))
+
+(defn title-border
+  [text]
+  (doto (border/to-border text)
+    (.setTitleFont (:bold fonts))
+    (.setTitleColor (seesaw.color/to-color "#F0DFAF"))
+    (.setBorder (border/line-border :color "#686868" :thickness 1))))
+
+(defn flow-panel
+  [& opts]
+  (apply ui/flow-panel
+         :font (:regular fonts)
+         :foreground (t/zenburn-colors "zenburn-fg")
+         :background (t/zenburn-colors "zenburn-bg") opts))
+
+(defn mig-panel
+  [& opts]
+  (apply mig/mig-panel
+         :font (:regular fonts)
+         :foreground (t/zenburn-colors "zenburn-fg")
+         :background (t/zenburn-colors "zenburn-bg") opts))
+
+(def login-panel
+  (mig-panel
+   :constraints ["" "" ""]
+   :items [[(label :text "Username") ""]
+           [(text) "wrap"]
+           [(label :text "Password") ""]
+           [(password) "wrap 15px"]
+           [(button :text "Back") "align left"]
+           [(button :text "Next") "align right"]]
+   :border (title-border "Log In")))
+
+(def content
+  (mig-panel
+   :constraints ["" "" ""]
+   :items [[login-panel "center, wrap, push"]
+           [(label :text "Starship Executive Command Terminal ")
+            "bottom, right"]]
+   :border (title-border "Frontier")))
+
+(defn frame
+  [& {:keys [size] :as opts}]
+  (let [[columns rows] size
+        size [(* columns 7) :by (* rows 15)]
+        opts (reduce into [] (assoc opts :size size))]
+    (apply ui/frame opts)))
+
+(def f
+  (doto (frame :title "Frontier"
+               :content content
+               :size [120 30]
+               :resizable? false)
+    (.setLocation 720 450)))
