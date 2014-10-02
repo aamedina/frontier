@@ -70,12 +70,11 @@
                          :mouse-exited #(ui/config! % :background "#D3D3D3")
                          :mouse-pressed #(ui/config! % :border (focused-border))
                          :mouse-released #(ui/config! % :border (button-border))
-                         :mouse-clicked (fn [this]
-                                          (when-let [f (:action opts)] (f)))
                          :focus-gained #(ui/config! % :background "#E5E5E5")
                          :focus-lost #(ui/config! % :background "#D3D3D3")]
                 :background "#D3D3D3"
-                :foreground (t/zenburn-colors "zenburn-bg"))
+                :foreground (t/zenburn-colors "zenburn-bg")
+                :action (ui/action :handler (:action opts)))
               (reduce into []))))
 
 (defn text
@@ -144,35 +143,3 @@
          :foreground (t/zenburn-colors "zenburn-fg")
          :background (t/zenburn-colors "zenburn-bg") opts))
 
-(def login-panel
-  (mig-panel
-   :constraints ["" "" ""]
-   :items [[(label :text "Username") ""]
-           [(text) "wrap"]
-           [(label :text "Password") ""]
-           [(password) "wrap 15px"]
-           [(button :text "Back") "align left"]
-           [(button :text "Next") "align right"]]
-   :border (title-border "Log In")))
-
-(def content
-  (mig-panel
-   :constraints ["" "" ""]
-   :items [[login-panel "center, wrap, push"]
-           [(label :text "Starship Executive Command Terminal ")
-            "bottom, right"]]
-   :border (title-border "Frontier")))
-
-(defn frame
-  [& {:keys [size] :as opts}]
-  (let [[columns rows] size
-        size [(* columns 7) :by (* rows 15)]
-        opts (reduce into [] (assoc opts :size size))]
-    (apply ui/frame opts)))
-
-(def f
-  (doto (frame :title "Frontier"
-               :content content
-               :size [120 30]
-               :resizable? false)
-    (.setLocation 720 450)))
