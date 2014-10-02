@@ -28,10 +28,10 @@
   (start [this]
     (if (nil? frame)
       (let [frame (ui/frame :title "Frontier"
-                            :size [(* 120 7) (* 30 15)]
+                            :size [(* 120 7) :by (* 30 15)]
                             :resizable? false)
             game-client (assoc this :frame frame)]
-        (ui/config! :content (content game-client))
+        (ui/config! frame :content (content game-client))
         (doto frame
           (.setLocationRelativeTo nil)
           (ui/show!))
