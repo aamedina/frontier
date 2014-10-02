@@ -64,10 +64,11 @@
                        (.channel NioSocketChannel)
                        (.handler handler))
            in (chan 1)
-           events (pub in :op)]
+           events (pub in :op)
+           id (rand-int Integer/MAX_VALUE)
+           conn (atom nil)]
        (go (let [{:keys [channel] :as msg} (<! (sub events :connect (chan 1)))]
-             (.writeAndFlush ^Channel channel
-                             {:op :connect
-                              :id (rand-int Integer/MAX_VALUE)})))
-       (->TCPClient group bootstrap remote-address nil in events))))
+             (reset! conn channel)
+             (.writeAndFlush ^Channel channel {:op :connect :id id})))
+       (->TCPClient group bootstrap remote-address nil conn id in events))))
 

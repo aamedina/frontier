@@ -5,7 +5,7 @@
             [frontier.net.async :refer [future-chan]]
             [clojure.tools.logging :as log])
   (:import (io.netty.bootstrap Bootstrap ServerBootstrap)
-           (io.netty.channel ChannelHandlerContext ChannelFuture)
+           (io.netty.channel ChannelHandlerContext ChannelFuture Channel)
            (io.netty.handler.codec ByteToMessageCodec CorruptedFrameException)
            (io.netty.channel.nio NioEventLoopGroup)
            (io.netty.buffer ByteBuf)
@@ -59,7 +59,7 @@
                       ^Bootstrap bootstrap
                       ^InetSocketAddress remote-address
                       ^ChannelFuture bind-future
-                      in events]
+                      conn id in events]
   c/Lifecycle
   (start [this]
     (if (nil? bind-future)

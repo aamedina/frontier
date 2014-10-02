@@ -15,12 +15,10 @@
            (java.awt Color)))
 
 (defn content
-  [client]
+  [client items]
   (mig-panel
    :constraints ["" "" ""]
-   :items [[(login-panel client) "center, wrap, push"]
-           [(label :text "Starship Executive Command Terminal")
-            "bottom, right"]]
+   :items items
    :border (title-border "Frontier")))
 
 (defrecord GameClient [frame login-client]
@@ -31,9 +29,14 @@
                             :size [(* 120 7) :by (* 30 15)]
                             :resizable? false)
             game-client (assoc this :frame frame)]
-        (ui/config! frame :content (content game-client))
+        (ui/config!
+         frame :content
+         (content game-client
+                  [[(login-panel game-client) "center, wrap, push"]
+                   [(label :text "Starship Executive Command Terminal")
+                    "bottom, right"]]))
         (doto frame
-          (.setLocationRelativeTo nil)
+          (.setLocation 590 225)
           (ui/show!))
         game-client)
       this))

@@ -30,7 +30,7 @@
 (set! *warn-on-reflection* true)
 
 (defn login-server-handler
-  []
+  [server]
   (let [channels (DefaultChannelGroup. GlobalEventExecutor/INSTANCE)]
     (proxy [SimpleChannelInboundHandler] []
       (^void channelActive [^ChannelHandlerContext ctx]
@@ -52,18 +52,18 @@
         (log/info msg)
         (case (:op msg)
           :connect (redis/add (:id msg) (dissoc msg :op))
-          :login (redis/update (:id msg) assoc :auth
-                               {:username (:username msg)
-                                :password (:password msg)})
-          :logout (do (redis/remove (:id msg) (dissoc msg :op))
-                      (.close ctx))
+          :login (log/info (:db server))
+          #_(redis/update (:id msg) assoc :auth
+                          {:username (:username msg)
+                           :password (:password msg)})
+          :logout (do (redis/remove (:id msg) (dissoc msg :op)) (.close ctx))
           (log/error msg)))
       (^void exceptionCaught [^ChannelHandlerContext ctx ^Throwable t]
         (.printStackTrace t)
         (.close ctx)))))
 
 (defn login-server-pipeline
-  []
+  [server]
   (proxy [ChannelInitializer] []
     (initChannel [^Channel ch]
       (let [ssc (SelfSignedCertificate.)
@@ -74,18 +74,18 @@
                                 [(LoggingHandler. LogLevel/INFO)
                                  (.newHandler ssl-ctx (.alloc ch))
                                  (tcp-message-codec)
-                                 (login-server-handler)])))))))
+                                 (login-server-handler server)])))))))
 
 (defn login-server
   ([] (login-server (InetSocketAddress. 9091)))
-  ([address] (login-server address (login-server-pipeline)))
-  ([address handler]
+  ([address]
      (let [bosses (NioEventLoopGroup. 1)
            workers (NioEventLoopGroup.)
            bootstrap (doto (ServerBootstrap.)
                        (.group bosses workers)
                        (.channel NioServerSocketChannel)
-                       (.handler (LoggingHandler. LogLevel/INFO))
-                       (.childHandler handler))]
-       (->TCPServer bosses workers bootstrap address nil))))
+                       (.handler (LoggingHandler. LogLevel/INFO)))
+           server (->TCPServer bosses workers bootstrap address nil)]
+       (.childHandler bootstrap (login-server-pipeline server))
+       server)))
 
