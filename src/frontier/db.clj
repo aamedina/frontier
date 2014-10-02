@@ -4,7 +4,7 @@
             [clojure.java.io :as io])
   (:import datomic.Util))
 
-(defrecord Database [conn db uri]
+(defrecord Database [conn uri]
   c/Lifecycle
   (start [this]
     (if (nil? conn)
@@ -12,7 +12,7 @@
                      (d/connect uri))]
         (doseq [tx (Util/readAll (io/reader (io/resource "schema.edn")))]
           (d/transact conn tx))        
-        (assoc this :conn conn :db (d/db conn)))
+        (assoc this :conn conn))
       this))
   (stop [this] this))
 

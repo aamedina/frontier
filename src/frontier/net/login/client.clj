@@ -28,17 +28,17 @@
 (set! *warn-on-reflection* true)
 
 (defn login-client-handler
-  [^InetSocketAddress remote-address]
+  [in ^InetSocketAddress remote-address]
   (let [channels (DefaultChannelGroup. GlobalEventExecutor/INSTANCE)]
     (proxy [SimpleChannelInboundHandler] []
       (^void messageReceived [^ChannelHandlerContext ctx msg]
-        (log/warn msg))
+        (put! in msg))
       (^void exceptionCaught [^ChannelHandlerContext ctx ^Throwable t]
         (log/error t (.getMessage t))
         (.printStackTrace t)))))
 
 (defn login-client-pipeline
-  [^InetSocketAddress remote-address]
+  [in ^InetSocketAddress remote-address]
   (proxy [ChannelInitializer] []
     (initChannel [^Channel ch]
       (let [trust-manager InsecureTrustManagerFactory/INSTANCE
@@ -50,23 +50,22 @@
                                               (.getHostName remote-address)
                                               (.getPort remote-address))
                                  (tcp-message-codec)
-                                 (login-client-handler remote-address)])))))))
+                                 (login-client-handler in remote-address)]
+                                )))))))
 
 (defn login-client
   ([] (login-client (InetSocketAddress. "192.168.1.2" 9091)))
-  ([remote-address]
-     (login-client remote-address (login-client-pipeline remote-address)))
-  ([^InetSocketAddress remote-address handler]
+  ([^InetSocketAddress remote-address]
      (let [group (NioEventLoopGroup.)
            bootstrap (doto (Bootstrap.)
                        (.group group)
                        (.remoteAddress remote-address)
-                       (.channel NioSocketChannel)
-                       (.handler handler))
+                       (.channel NioSocketChannel))
            in (chan 1)
            events (pub in :op)
            id (rand-int Integer/MAX_VALUE)
            conn (atom nil)]
+       (.handler bootstrap (login-client-pipeline in remote-address))       
        (go (let [{:keys [channel] :as msg} (<! (sub events :connect (chan 1)))]
              (reset! conn channel)
              (.writeAndFlush ^Channel channel {:op :connect :id id})))

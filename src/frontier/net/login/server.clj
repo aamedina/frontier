@@ -11,7 +11,8 @@
             [crypto.password.scrypt :as scrypt]
             [frontier.net.tcp :refer [tcp-message-codec ->TCPServer]]
             [datomic.api :as d :refer [q]]
-            [frontier.net.async :refer [future-chan]])
+            [frontier.db :as q]
+            [frontier.net.async :refer [future-chan transact]])
   (:import (io.netty.bootstrap ServerBootstrap)
            (io.netty.channel ChannelOption ChannelInitializer ChannelFuture
                              ChannelPipeline ChannelHandlerAdapter
@@ -33,27 +34,33 @@
 
 (defn create-account
   [conn msg]
-  (future-chan (d/transact-async
-                conn
-                [{:db/id #db/id [:db.part/db]
-                  :account/username (:username msg)
-                  :account/password (scrypt/encrypt (:password msg))}])))
+  (transact conn [{:db/id #db/id [:db.part/user]
+                   :account/username (:username msg)
+                   :account/password (scrypt/encrypt (:password msg))}]))
 
 (defn find-account
-  [db username]
-  (when-let [eid (first (q '[:find ?e
-                             :in $ ?username
-                             :where [?e :account/username ?username]]
-                           db username))]
-    (d/entity db eid)))
+  [conn username]
+  (when-let [eid (ffirst (q '[:find ?e
+                              :in $ ?username
+                              :where [?e :account/username ?username]]
+                            (d/db conn) username))]
+    (d/entity (d/db conn) eid)))
 
 (defn login
   [{:keys [db] :as server} ^ChannelHandlerContext ctx msg]
-  (go (let [{:keys [conn db]} db
-            auth? (if-let [account (find-account db (:username msg))]
-                    (scrypt/check (:password msg) (:account/password account))
-                    (do (<! (create-account conn msg)) true))]
-        auth?)))
+  (go (let [ctx ^ChannelHandlerContext ctx
+            {:keys [conn]} db
+            op (if-let [account (find-account conn (:username msg))]
+                 (when (scrypt/check (:password msg)
+                                     (:account/password account))
+                   :authentication-success)
+                 (when (log/info (<! (create-account conn msg)))
+                   :new-account))]
+        (case op
+          :authentication-success (.writeAndFlush ctx {:op op :id (:id msg)})
+          :new-account (.writeAndFlush ctx {:op op :id (:id msg)})
+          (.writeAndFlush ctx {:op :authentication-failure
+                       :id (:id msg)})))))
 
 (defn logout
   [server ^ChannelHandlerContext ctx msg]
