@@ -20,7 +20,7 @@
    [frontier.net.login.server :refer [login-server]])
   (:import (java.net InetSocketAddress)))
 
-(defonce system nil)
+(def system nil)
 
 (defonce +config+
   (let [{:keys [^String remote-host ^int remote-port

@@ -14,7 +14,7 @@
                  :id id
                  :username (config username-input :text)
                  :password (config password-input :text)}]
-        (<! (future-chan (.writeAndFlush @conn msg)))
+        (log/info (<! (future-chan (.writeAndFlush @conn msg))))
         true)))
 
 (defn login-panel

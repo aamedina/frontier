@@ -9,7 +9,8 @@
             [clojure.java.io :as io]
             [taoensso.nippy :as nippy :refer [freeze thaw]]
             [crypto.password.scrypt :as scrypt]
-            [frontier.net.tcp :refer [tcp-message-codec ->TCPServer]])
+            [frontier.net.tcp :refer [tcp-message-codec ->TCPServer]]
+            [datomic.api :as db])
   (:import (io.netty.bootstrap ServerBootstrap)
            (io.netty.channel ChannelOption ChannelInitializer ChannelFuture
                              ChannelPipeline ChannelHandlerAdapter
@@ -28,6 +29,18 @@
            (javax.net.ssl SSLEngine)))
 
 (set! *warn-on-reflection* true)
+
+(defn login
+  [server ^ChannelHandlerContext ctx msg]
+  #_(redis/update (:id msg) assoc :auth
+                  {:username (:username msg)
+                   :password (:password msg)})
+  (log/info (:db server)))
+
+(defn logout
+  [server ^ChannelHandlerContext ctx msg]
+  (redis/remove (:id msg) (dissoc msg :op))
+  (.close ctx))
 
 (defn login-server-handler
   [server]
@@ -52,11 +65,8 @@
         (log/info msg)
         (case (:op msg)
           :connect (redis/add (:id msg) (dissoc msg :op))
-          :login (log/info (:db server))
-          #_(redis/update (:id msg) assoc :auth
-                          {:username (:username msg)
-                           :password (:password msg)})
-          :logout (do (redis/remove (:id msg) (dissoc msg :op)) (.close ctx))
+          :login (login server ctx msg)
+          :logout (logout server ctx msg)
           (log/error msg)))
       (^void exceptionCaught [^ChannelHandlerContext ctx ^Throwable t]
         (.printStackTrace t)
@@ -84,8 +94,7 @@
            bootstrap (doto (ServerBootstrap.)
                        (.group bosses workers)
                        (.channel NioServerSocketChannel)
-                       (.handler (LoggingHandler. LogLevel/INFO)))
-           server (->TCPServer bosses workers bootstrap address nil)]
-       (.childHandler bootstrap (login-server-pipeline server))
-       server)))
+                       (.handler (LoggingHandler. LogLevel/INFO)))]
+       (->TCPServer bosses workers bootstrap address nil
+                    login-server-pipeline))))
 

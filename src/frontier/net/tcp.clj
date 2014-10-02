@@ -34,11 +34,13 @@
                       ^NioEventLoopGroup workers
                       ^ServerBootstrap bootstrap
                       ^InetSocketAddress address
-                      ^ChannelFuture bind-future]
+                      ^ChannelFuture bind-future
+                      pipeline]
   c/Lifecycle
   (start [this]
     (if (nil? bind-future)
-      (let [bind-future (.bind bootstrap address)
+      (let [_ (.childHandler bootstrap (pipeline this))
+            bind-future (.bind bootstrap address)
             server (assoc this
                      :bind-future bind-future)]
         (go (when-some [future (<! (future-chan bind-future))]
