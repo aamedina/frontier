@@ -1,4 +1,6 @@
-(ns frontier.ui.kanji)
+(ns frontier.ui.kanji
+  (:require [seesaw.core :as ui]
+            [frontier.ui :refer :all]))
 
 (def kanji
   {:success "功"
@@ -302,3 +304,10 @@
 
 (def tactics
   {:surround "囲"})
+
+(defn icon
+  [s]
+  (label :text s
+         :font (:osaka fonts)
+         :border (basic-border)
+         :cursor :hand))

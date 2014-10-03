@@ -1,5 +1,6 @@
 (ns frontier.ui.primary
   (:require [frontier.ui :refer :all]
+            [frontier.ui.kanji :as kanji :refer [icon]]
             [clojure.tools.logging :as log]
             [seesaw.core :as ui :refer [config config!]]
             [seesaw.dev :refer :all]
@@ -10,8 +11,22 @@
 (defn toolbar
   [client]
   (mig-panel
-   :constraints ["ins 0" "" ""]
-   :items [[(label :text "敏" :font (:osaka fonts)) ""]
+   :constraints ["ins 0, gapy 0" "" ""]
+   :items [[(icon (:attack kanji/commands)) ""]
+           [(icon (:attack kanji/commands)) ""]
+           [(icon (:attack kanji/commands)) ""]
+           [(icon (:attack kanji/commands)) ""]
+
+           [(icon (:attack kanji/commands)) ""]
+           [(icon (:attack kanji/commands)) ""]
+           [(icon (:attack kanji/commands)) ""]
+           [(icon (:attack kanji/commands)) ""]
+
+           [(icon (:attack kanji/commands)) ""]
+           [(icon (:attack kanji/commands)) ""]
+           [(icon (:attack kanji/commands)) ""]
+           [(icon (:attack kanji/commands)) "wrap"]
+           
            [(label :text "F1" :font (derive-font (:bold fonts) 12.0)) ""]
            [(label :text "F2" :font (derive-font (:bold fonts) 12.0)) ""]
            [(label :text "F3" :font (derive-font (:bold fonts) 12.0)) ""]
@@ -43,10 +58,52 @@
            [(vital-bar client "#BFEBBF") "wrap"]
            [(vital-bar client "#7CB8BB") ""]]))
 
+(defn primary-icons
+  [client]
+  (mig-panel
+   :constraints ["ins 0, gapy 0" "" ""]
+   :items [[(icon (:attack kanji/commands)) ""]
+           [(icon (:attack kanji/commands)) ""]
+           [(icon (:attack kanji/commands)) ""]
+           [(icon (:attack kanji/commands)) ""]
+
+           [(icon (:attack kanji/commands)) ""]
+           [(icon (:attack kanji/commands)) ""]
+           [(icon (:attack kanji/commands)) ""]
+           [(icon (:attack kanji/commands)) ""]
+
+           [(icon (:attack kanji/commands)) ""]
+           [(icon (:attack kanji/commands)) ""]
+           [(icon (:attack kanji/commands)) ""]
+           [(icon (:attack kanji/commands)) "wrap"]]))
+
+
+(defn radar
+  [client]
+  (mig-panel
+   :constraints ["ins 0" "" ""]
+   :items [["" "grow"]]
+   :border (title-border "Radar")))
+
+(defn chat-window
+  [client]
+  (mig-panel
+   :constraints ["fill, ins 0" "" ""]
+   :items [[(scrollable (text :multi-line? true
+                              :editable? false
+                              :rows 5
+                              :text "hello\nthere\nmulti\nline\ntext\n!"))
+            "grow, top, center, wrap"]
+           [(text) "grow, bottom, center"]]
+   :border (title-border "Chat")))
+
 (defn primary-panel
   [client]
   (mig-panel
    :constraints ["ins 0" "" ""]
    :items [[(basic-systems-health client) "top, left"]
-           [(toolbar client) "top"]]
+           [(toolbar client) "top, wrap, push"]
+           [(radar client) "bottom, left"]
+           [(chat-window client) "grow, bottom, center"]
+           [(primary-icons client) "bottom, right"]]
    :border (title-border "Veckon Strife")))

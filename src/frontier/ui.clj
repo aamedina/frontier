@@ -10,9 +10,12 @@
             [seesaw.cursor :as cursor]
             [seesaw.color :as color]
             [seesaw.mig :as mig])
-  (:import (java.awt Font FontMetrics Color GraphicsEnvironment Insets)
-           (java.awt.font TextAttribute)           
-           (javax.swing UIManager)))
+  (:import (java.awt Font FontMetrics Color GraphicsEnvironment Insets Graphics
+                     Dimension Graphics2D)
+           (java.awt.font TextAttribute)
+           (java.awt.image BufferedImage)
+           (javax.swing UIManager JScrollPane JScrollBar JButton)
+           (javax.swing.plaf.basic BasicScrollBarUI)))
 
 (defn create-font
   [font-file]
@@ -27,6 +30,45 @@
    :bold (create-font "fonts/UbuntuMono-B.ttf")
    :bold-italic (create-font "fonts/UbuntuMono-BI.ttf")
    :osaka (.deriveFont (seesaw.font/font "Osaka") (float 14.0))})
+
+(def dimensionless-button
+  (proxy [JButton] []
+    (getPreferredSize []
+      (Dimension. 0 0))))
+
+(defn text-image
+  [color font-metrics]
+  (let [img (BufferedImage. 32 32 BufferedImage/TYPE_INT_RGB)]
+    (doto (.createGraphics img)
+      (.setPaint color)
+      (.fillRect 0 0 32 32)
+      (.dispose))
+    img))
+
+(defn scrollbar-ui
+  []
+  (proxy [BasicScrollBarUI] []
+    (paintThumb [graphics component rect]
+      (doto ^Graphics2D graphics
+        (.drawImage (text-image (color/color "#F0DFAF")
+                                (.getFontMetrics graphics))
+                    (.-x rect) (.-y rect) (.-width rect) (.-height rect) nil)))
+    (paintTrack [graphics component rect]
+      (doto ^Graphics2D graphics
+        (.drawImage (text-image (color/color "#696969")
+                                (.getFontMetrics graphics))
+                    (.-x rect) (.-y rect) (.-width rect) (.-height rect) nil)))
+    (createDecreaseButton [orientation] dimensionless-button)
+    (createIncreaseButton [orientation] dimensionless-button)))
+
+(defn scrollable
+  [target & opts]
+  (let [scroll-pane (apply ui/scrollable target
+                           :border 0
+                           :hscroll :never
+                           :vscroll :always opts)]
+    (.setUI (.getVerticalScrollBar scroll-pane) (scrollbar-ui))
+    scroll-pane))
 
 (defn label
   [& opts]
