@@ -9,6 +9,7 @@
             [frontier.net.client :refer [client-socket]]
             [frontier.ui :refer :all]
             [frontier.ui.login :refer [login-panel]]
+            [frontier.ui.primary :refer [primary-panel]]
             [seesaw.core :as ui])
   (:import (io.netty.channel ChannelOption)
            (java.nio.charset Charset)
@@ -30,8 +31,8 @@
                             :resizable? false)
             game-client (assoc this :frame frame)]
         (ui/config!
-         frame :content
-         (content game-client
+         frame :content (primary-panel game-client)
+         #_(content game-client
                   [[(login-panel game-client) "center, wrap, push"]
                    [(label :text "Starship Executive Command Terminal")
                     "bottom, right"]]))

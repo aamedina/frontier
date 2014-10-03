@@ -54,7 +54,7 @@
                  (when (scrypt/check (:password msg)
                                      (:account/password account))
                    :authentication-success)
-                 (when (log/info (<! (create-account conn msg)))
+                 (when (<! (create-account conn msg))
                    :new-account))]
         (case op
           :authentication-success (.writeAndFlush ctx {:op op :id (:id msg)})

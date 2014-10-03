@@ -25,7 +25,8 @@
   {:regular (create-font "fonts/UbuntuMono-R.ttf")
    :regular-italic (create-font "fonts/UbuntuMono-RI.ttf")
    :bold (create-font "fonts/UbuntuMono-B.ttf")
-   :bold-italic (create-font "fonts/UbuntuMono-BI.ttf")})
+   :bold-italic (create-font "fonts/UbuntuMono-BI.ttf")
+   :osaka (.deriveFont (seesaw.font/font "Osaka") (float 14.0))})
 
 (defn label
   [& opts]
@@ -78,19 +79,19 @@
               (reduce into []))))
 
 (defn text
-  [& {:keys [text columns rows] :as opts}]
-  (ui/text :text text
-           :caret-color (t/zenburn-colors "zenburn-fg")
-           :caret-position 0
-           :columns (or columns 20)
-           :cursor :text
-           :border 0
-           :font (:regular fonts)
-           :margin 0
-           :selected-text-color (t/zenburn-colors "zenburn-fg")
-           :selection-color "#202020"
-           :foreground (t/zenburn-colors "zenburn-fg")
-           :background "#696969"))
+  [& opts]
+  (apply ui/text
+         :caret-color (t/zenburn-colors "zenburn-fg")
+         :caret-position 0
+         :columns 20
+         :cursor :text
+         :border 0
+         :font (:regular fonts)
+         :margin 0
+         :selected-text-color (t/zenburn-colors "zenburn-fg")
+         :selection-color "#202020"
+         :foreground (t/zenburn-colors "zenburn-fg")
+         :background "#696969" opts))
 
 (defn password
   [& {:keys [text columns rows] :as opts}]
@@ -128,6 +129,10 @@
     (.setTitleFont (:bold fonts))
     (.setTitleColor (seesaw.color/to-color "#F0DFAF"))
     (.setBorder (border/line-border :color "#686868" :thickness 1))))
+
+(defn basic-border
+  []
+  (border/line-border :color "#686868" :thickness 1))
 
 (defn flow-panel
   [& opts]

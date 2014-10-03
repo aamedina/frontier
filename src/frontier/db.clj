@@ -4,6 +4,10 @@
             [clojure.java.io :as io])
   (:import datomic.Util))
 
+(defmethod print-method datomic.Entity
+  [x writer]
+  (.write writer (zipmap (keys x) (vals x))))
+
 (defrecord Database [conn uri]
   c/Lifecycle
   (start [this]
