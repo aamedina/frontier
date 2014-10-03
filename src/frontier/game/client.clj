@@ -31,11 +31,12 @@
                             :resizable? false)
             game-client (assoc this :frame frame)]
         (ui/config!
-         frame :content (primary-panel game-client)
+         frame :content
+         (primary-panel game-client)
          #_(content game-client
-                  [[(login-panel game-client) "center, wrap, push"]
-                   [(label :text "Starship Executive Command Terminal")
-                    "bottom, right"]]))
+                    [[(login-panel game-client) "center, wrap, push"]
+                     [(label :text "Starship Executive Command Terminal")
+                      "bottom, right"]]))
         (doto frame
           (.setLocation 590 225)
           (ui/show!))

@@ -1,5 +1,6 @@
 (ns frontier.ui.kanji
   (:require [seesaw.core :as ui]
+            [seesaw.keymap :as km]
             [frontier.ui :refer :all]))
 
 (def data-screens
@@ -319,7 +320,9 @@
   {:surround "囲"})
 
 (defn icon
-  [s tip]
-  (button :text s
-          :font (:osaka fonts)
-          :tip tip))
+  [s tip key action]
+  (doto (button :font (:osaka fonts)
+                :action (ui/action :handler action)
+                :text s
+                :tip tip)
+    (km/map-key key (ui/action :handler action) :scope :global)))

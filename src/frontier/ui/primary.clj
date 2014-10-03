@@ -29,20 +29,32 @@
   [client]
   (mig-panel
    :constraints ["ins 0, gapy 0" "" ""]
-   :items [[(icon (:attack kanji/commands) "Attack") ""]
-           [(icon (:attack kanji/commands) "Attack") ""]
-           [(icon (:attack kanji/commands) "Attack") ""]
-           [(icon (:attack kanji/commands) "Attack") ""]
+   :items [[(icon (:attack kanji/commands) "Attack" "F1"
+                  (fn [this] (println this))) ""]
+           [(icon (:attack kanji/commands) "Attack" "F2"
+                  (fn [this] (println this))) ""]
+           [(icon (:attack kanji/commands) "Attack" "F3"
+                  (fn [this] (println this))) ""]
+           [(icon (:attack kanji/commands) "Attack" "F4"
+                  (fn [this] (println this))) ""]
 
-           [(icon (:attack kanji/commands) "Attack") ""]
-           [(icon (:attack kanji/commands) "Attack") ""]
-           [(icon (:attack kanji/commands) "Attack") ""]
-           [(icon (:attack kanji/commands) "Attack") ""]
+           [(icon (:attack kanji/commands) "Attack" "F5"
+                  (fn [this] (println this))) ""]
+           [(icon (:attack kanji/commands) "Attack" "F6"
+                  (fn [this] (println this))) ""]
+           [(icon (:attack kanji/commands) "Attack" "F7"
+                  (fn [this] (println this))) ""]
+           [(icon (:attack kanji/commands) "Attack" "F8"
+                  (fn [this] (println this))) ""]
 
-           [(icon (:mail kanji/kanji) "Mail") ""]
-           [(icon (:attack kanji/commands) "Help") ""]
-           [(icon (:attack kanji/commands) "Settings") ""]
-           [(icon (:attack kanji/commands) "Game Menu") "wrap"]
+           [(icon (:mail kanji/kanji) "Mail" "F9"
+                  (fn [this] (println this))) ""]
+           [(icon (:attack kanji/commands) "Help" "F10"
+                  (fn [this] (println this))) ""]
+           [(icon (:attack kanji/commands) "Settings" "F11"
+                  (fn [this] (println this))) ""]
+           [(icon (:attack kanji/commands) "Game Menu" "F12"
+                  (fn [this] (println this))) "wrap"]
            
            [(label :text "F1" :font (derive-font (:bold fonts) 12.0)) ""]
            [(label :text "F2" :font (derive-font (:bold fonts) 12.0)) ""]
@@ -63,18 +75,28 @@
   [client]
   (mig-panel
    :constraints ["ins 0, gapy 0" "grow" ""]
-   :items [[(icon (:navigation kanji/data-screens) "Navigation") ""]
-           [(icon (:inventory kanji/data-screens) "Inventory") ""]
-           [(icon (:databank kanji/data-screens) "Databank") ""]
-           [(icon (:ship kanji/data-screens) "Ship") ""]
-           [(icon (:character kanji/data-screens) "Character") ""]
-           [(icon (:skills kanji/data-screens) "Skills") ""]
-           [(icon (:commands kanji/data-screens) "Commands") ""]
-           [(icon (:mail kanji/data-screens) "Mail") ""]
-           [(icon (:options kanji/data-screens) "Options") ""]
-           [(icon (:menu kanji/data-screens) "Game Menu") "wrap"]
+   :items [[(icon (:navigation kanji/data-screens) "Navigation" "ctrl N"
+                  (fn [this] (println this))) ""]
+           [(icon (:inventory kanji/data-screens) "Inventory" "ctrl I"
+                  (fn [this] (println this))) ""]
+           [(icon (:databank kanji/data-screens) "Databank" "ctrl D"
+                  (fn [this] (println this))) ""]
+           [(icon (:ship kanji/data-screens) "Ship" "ctrl V"
+                  (fn [this] (println this))) ""]
+           [(icon (:character kanji/data-screens) "Character" "ctrl C"
+                  (fn [this] (println this))) ""]
+           [(icon (:skills kanji/data-screens) "Skills" "ctrl S"
+                  (fn [this] (println this))) ""]
+           [(icon (:commands kanji/data-screens) "Commands" "ctrl A"
+                  (fn [this] (println this))) ""]
+           [(icon (:mail kanji/data-screens) "Mail" "ctrl M"
+                  (fn [this] (println this))) ""]
+           [(icon (:options kanji/data-screens) "Options" "ctrl O"
+                  (fn [this] (println this))) ""]
+           [(icon (:menu kanji/data-screens) "Game Menu" "ESCAPE"
+                  (fn [this] (println this))) "wrap"]
            
-           [(label :text "C-m" :font (derive-font (:bold fonts) 12.0)) ""]
+           [(label :text "C-n" :font (derive-font (:bold fonts) 12.0)) ""]
            [(label :text "C-i" :font (derive-font (:bold fonts) 12.0)) ""]
            [(label :text "C-d" :font (derive-font (:bold fonts) 12.0)) ""]
            [(label :text "C-v" :font (derive-font (:bold fonts) 12.0)) ""]
@@ -99,8 +121,7 @@
    :constraints ["fill, ins 0" "" ""]
    :items [[(scrollable (text :multi-line? true
                               :editable? false
-                              :rows 5
-                              :text "hello\nthere\nmulti\nline\ntext\n!"))
+                              :rows 5))
             "grow, wrap"]
            [(text) "grow"]]
    :border (title-border "Chat")))
