@@ -78,12 +78,12 @@
              [username-input "wrap"]
              [(label :text "Password") ""]
              [password-input "wrap 15px"]
-             [(button :text "Back")
-              "align left"]
-             [(button :text "Next"
-                      :action (fn [this]
-                                (handle-login client
-                                              username-input
-                                              password-input)))
+             [(button :text " Back ") "align left"]
+             [(button :text " Next "
+                      :action (ui/action :handler
+                                         (fn [this]
+                                           (handle-login client
+                                                         username-input
+                                                         password-input))))
               "align right"]]
      :border (title-border "Log In"))))

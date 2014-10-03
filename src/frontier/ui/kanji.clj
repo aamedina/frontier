@@ -2,10 +2,24 @@
   (:require [seesaw.core :as ui]
             [frontier.ui :refer :all]))
 
+(def data-screens
+  {:navigation "図"
+   :inventory "貨"
+   :databank "帳"
+   :ship "船"
+   :character "自"
+   :skills "技"
+   :commands "令"
+   :mail "郵"
+   :options "淘"
+   :menu "出"})
+
 (def kanji
   {:success "功"
+   :freight "貨"
    :failure "敗"
    :destroy "剿"
+   :mail "郵"
    :quantity "量"
    :house "廈"
    :abolish "廃"
@@ -66,6 +80,7 @@
    :think "憶"
    :constitution "憲"
    :key "鍵"
+   :skill "技"
    :money "銭"
    :travel "往"
    :promote "進"
@@ -109,7 +124,6 @@
    :follow "随"
    :help "幇"
    :log "帳"
-   :skill "技"
    :technique "術"
    :rule "戒"
    :lock "錠"
@@ -126,7 +140,6 @@
    :buy "買"
    :pierce "貫"
    :marketing "販"
-   :freight "貨"
    :assets "財"
    :district "郡"
    :patrol "巡"
@@ -189,7 +202,7 @@
   {:criminal "賊"})
 
 (def mail
-  {:mail "郵"
+  {
    :send "捺"})
 
 (def attributes
@@ -306,8 +319,7 @@
   {:surround "囲"})
 
 (defn icon
-  [s]
-  (label :text s
-         :font (:osaka fonts)
-         :border (basic-border)
-         :cursor :hand))
+  [s tip]
+  (button :text s
+          :font (:osaka fonts)
+          :tip tip))

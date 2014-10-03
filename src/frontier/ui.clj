@@ -102,23 +102,20 @@
                                         :top 0 :left 0 :right 2 :bottom 2)))
 
 (defn button
-  [& {:as opts}]
+  [& opts]
   (apply ui/button
-         (->> (assoc opts
-                :text (str " " (:text opts) " ")
-                :cursor (cursor/cursor :hand)
-                :border (button-border)
-                :font (:bold fonts)
-                :listen [:mouse-entered #(ui/config! % :background "#E5E5E5")
-                         :mouse-exited #(ui/config! % :background "#D3D3D3")
-                         :mouse-pressed #(ui/config! % :border (focused-border))
-                         :mouse-released #(ui/config! % :border (button-border))
-                         :focus-gained #(ui/config! % :background "#E5E5E5")
-                         :focus-lost #(ui/config! % :background "#D3D3D3")]
-                :background "#D3D3D3"
-                :foreground (t/zenburn-colors "zenburn-bg")
-                :action (ui/action :handler (:action opts)))
-              (reduce into []))))
+         :cursor (cursor/cursor :hand)
+         :border (button-border)
+         :font (:bold fonts)
+         :listen [:mouse-entered #(ui/config! % :background "#E5E5E5")
+                  :mouse-exited #(ui/config! % :background "#D3D3D3")
+                  :mouse-pressed #(ui/config! % :border (focused-border))
+                  :mouse-released #(ui/config! % :border (button-border))
+                  :focus-gained #(ui/config! % :background "#E5E5E5")
+                  :focus-lost #(ui/config! % :background "#D3D3D3")]
+         :background "#D3D3D3"
+         :foreground (t/zenburn-colors "zenburn-bg")
+         opts))
 
 (defn text
   [& opts]
