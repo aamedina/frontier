@@ -5,7 +5,7 @@
             [frontier.ui.theme :as t]
             [com.stuartsierra.component :refer [Lifecycle start stop]]
             [clojure.tools.namespace.repl :refer [refresh]]
-            [seesaw.core :as ui]
+            [seesaw.core :as ui :refer [config config!]]
             [seesaw.border :as border]
             [seesaw.cursor :as cursor]
             [seesaw.color :as color]
@@ -87,6 +87,13 @@
 (def h4 (comp #(ui/config! % :font (derive-font (:bold fonts) 20.0)) label))
 (def h5 (comp #(ui/config! % :font (derive-font (:bold fonts) 16.0)) label))
 
+(defn tab-border
+  []
+  (border/to-border (border/line-border :color "#DCDCDC"
+                                        :top 2 :left 2 :right 0 :bottom 0)
+                    (border/line-border :color "#949494"
+                                        :top 0 :left 0 :right 2 :bottom 0)))
+
 (defn button-border
   []
   (border/to-border (border/line-border :color "#DCDCDC"
@@ -101,18 +108,53 @@
                     (border/line-border :color "#DCDCDC"
                                         :top 0 :left 0 :right 2 :bottom 2)))
 
+(defn tab-focused-border
+  []
+  (border/to-border (border/line-border :color "#949494"
+                                        :top 2 :left 2 :right 0 :bottom 0)
+                    (border/line-border :color "#DCDCDC"
+                                        :top 0 :left 0 :right 2 :bottom 0)))
+
 (defn button
   [& opts]
   (apply ui/button
          :cursor (cursor/cursor :hand)
          :border (button-border)
          :font (:bold fonts)
-         :listen [:mouse-entered #(ui/config! % :background "#E5E5E5")
-                  :mouse-exited #(ui/config! % :background "#D3D3D3")
-                  :mouse-pressed #(ui/config! % :border (focused-border))
-                  :mouse-released #(ui/config! % :border (button-border))
-                  :focus-gained #(ui/config! % :background "#E5E5E5")
-                  :focus-lost #(ui/config! % :background "#D3D3D3")]
+         :listen [:mouse-entered #(when (config % :enabled?)
+                                    (ui/config! % :background "#E5E5E5"))
+                  :mouse-exited #(when (config % :enabled?)
+                                   (ui/config! % :background "#D3D3D3"))
+                  :mouse-pressed #(when (config % :enabled?)
+                                    (ui/config! % :border (focused-border)))
+                  :mouse-released #(when (config % :enabled?)
+                                     (ui/config! % :border (button-border)))
+                  :focus-gained #(when (config % :enabled?)
+                                   (ui/config! % :background "#E5E5E5"))
+                  :focus-lost #(when (config % :enabled?)
+                                 (ui/config! % :background "#D3D3D3"))]
+         :background "#D3D3D3"
+         :foreground (t/zenburn-colors "zenburn-bg")
+         opts))
+
+(defn tab
+  [& opts]
+  (apply ui/button
+         :cursor (cursor/cursor :hand)
+         :border (button-border)
+         :font (:bold fonts)
+         :listen [:mouse-entered #(when (config % :enabled?)
+                                    (ui/config! % :background "#E5E5E5"))
+                  :mouse-exited #(when (config % :enabled?)
+                                   (ui/config! % :background "#D3D3D3"))
+                  :mouse-pressed #(when (config % :enabled?)
+                                    (ui/config! % :border (tab-focused-border)))
+                  :mouse-released #(when (config % :enabled?)
+                                     (ui/config! % :border (tab-border)))
+                  :focus-gained #(when (config % :enabled?)
+                                   (ui/config! % :background "#E5E5E5"))
+                  :focus-lost #(when (config % :enabled?)
+                                 (ui/config! % :background "#D3D3D3"))]
          :background "#D3D3D3"
          :foreground (t/zenburn-colors "zenburn-bg")
          opts))

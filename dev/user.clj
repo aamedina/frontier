@@ -38,13 +38,14 @@
    #'system
    (fn [_]
      (c/system-map
-      :db (map->Database {:uri (:db-uri +config+)})
-      :login-server (c/using (login-server (:login-address +config+))
-                             [:db])
-      :login-client (c/using (login-client (:login-address +config+))
-                             [:login-server :db])
-      :game-client (c/using (map->GameClient {})
-                            [:login-client :db])))))
+      ;; :db (map->Database {:uri (:db-uri +config+)})
+      ;; :login-server (c/using (login-server (:login-address +config+))
+      ;;                        [:db])
+      ;; :login-client (c/using (login-client (:login-address +config+))
+      ;;                        [:login-server :db])
+      :game-client (c/using (map->GameClient {}) []
+                            ;; [:login-client :db]
+                            )))))
 
 (defn start
   "Starts the system running, updates the Var #'system."

@@ -18,42 +18,43 @@
         :background color))
 
 (defn basic-systems-health
-  [client]
-  (mig-panel
-   :constraints ["ins 0" "" ""]
-   :items [[(vital-bar client "#CC9393") "wrap"]
-           [(vital-bar client "#BFEBBF") "wrap"]
-           [(vital-bar client "#7CB8BB") ""]]))
+  [client & opts]
+  (apply mig-panel
+         :constraints ["ins 0" "" ""]
+         :items [[(vital-bar client "#CC9393") "wrap"]
+                 [(vital-bar client "#BFEBBF") "wrap"]
+                 [(vital-bar client "#7CB8BB") ""]]
+         opts))
 
 (defn toolbar
   [client]
   (mig-panel
    :constraints ["ins 0, gapy 0" "" ""]
-   :items [[(icon (:attack kanji/commands) "Attack" "F1"
+   :items [[(icon (:attack kanji/commands) "" "F1"
                   (fn [this] (println this))) ""]
-           [(icon (:attack kanji/commands) "Attack" "F2"
+           [(icon (:attack kanji/commands) "" "F2"
                   (fn [this] (println this))) ""]
-           [(icon (:attack kanji/commands) "Attack" "F3"
+           [(icon (:attack kanji/commands) "" "F3"
                   (fn [this] (println this))) ""]
-           [(icon (:attack kanji/commands) "Attack" "F4"
-                  (fn [this] (println this))) ""]
+           [(icon (:attack kanji/commands) "" "F4"
+                  (fn [this] (println this))) "gapafter 15"]
 
-           [(icon (:attack kanji/commands) "Attack" "F5"
+           [(icon (:attack kanji/commands) "" "F5"
                   (fn [this] (println this))) ""]
-           [(icon (:attack kanji/commands) "Attack" "F6"
+           [(icon (:attack kanji/commands) "" "F6"
                   (fn [this] (println this))) ""]
-           [(icon (:attack kanji/commands) "Attack" "F7"
+           [(icon (:attack kanji/commands) "" "F7"
                   (fn [this] (println this))) ""]
-           [(icon (:attack kanji/commands) "Attack" "F8"
-                  (fn [this] (println this))) ""]
+           [(icon (:attack kanji/commands) "" "F8"
+                  (fn [this] (println this))) "gapafter 15"]
 
-           [(icon (:mail kanji/kanji) "Mail" "F9"
+           [(icon (:mail kanji/kanji) "" "F9"
                   (fn [this] (println this))) ""]
-           [(icon (:attack kanji/commands) "Help" "F10"
+           [(icon (:attack kanji/commands) "" "F10"
                   (fn [this] (println this))) ""]
-           [(icon (:attack kanji/commands) "Settings" "F11"
+           [(icon (:attack kanji/commands) "" "F11"
                   (fn [this] (println this))) ""]
-           [(icon (:attack kanji/commands) "Game Menu" "F12"
+           [(icon (:attack kanji/commands) "" "F12"
                   (fn [this] (println this))) "wrap"]
            
            [(label :text "F1" :font (derive-font (:bold fonts) 12.0)) ""]
@@ -76,25 +77,45 @@
   (mig-panel
    :constraints ["ins 0, gapy 0" "grow" ""]
    :items [[(icon (:navigation kanji/data-screens) "Navigation" "ctrl N"
-                  (fn [this] (println this))) ""]
+                  (fn [e]
+                    (doto (ui/select (:frame client) [:#focused])
+                      (config! :border (title-border "Navigation"))))) ""]
            [(icon (:inventory kanji/data-screens) "Inventory" "ctrl I"
-                  (fn [this] (println this))) ""]
+                  (fn [e]
+                    (doto (ui/select (:frame client) [:#focused])
+                      (config! :border (title-border "Inventory"))))) ""]
            [(icon (:databank kanji/data-screens) "Databank" "ctrl D"
-                  (fn [this] (println this))) ""]
+                  (fn [e]
+                    (doto (ui/select (:frame client) [:#focused])
+                      (config! :border (title-border "Databank"))))) ""]
            [(icon (:ship kanji/data-screens) "Ship" "ctrl V"
-                  (fn [this] (println this))) ""]
+                  (fn [e]
+                    (doto (ui/select (:frame client) [:#focused])
+                      (config! :border (title-border "Ship"))))) ""]
            [(icon (:character kanji/data-screens) "Character" "ctrl C"
-                  (fn [this] (println this))) ""]
+                  (fn [e]
+                    (doto (ui/select (:frame client) [:#focused])
+                      (config! :border (title-border "Character"))))) ""]
            [(icon (:skills kanji/data-screens) "Skills" "ctrl S"
-                  (fn [this] (println this))) ""]
+                  (fn [e]
+                    (doto (ui/select (:frame client) [:#focused])
+                      (config! :border (title-border "Skills"))))) ""]
            [(icon (:commands kanji/data-screens) "Commands" "ctrl A"
-                  (fn [this] (println this))) ""]
+                  (fn [e]
+                    (doto (ui/select (:frame client) [:#focused])
+                      (config! :border (title-border "Commands"))))) ""]
            [(icon (:mail kanji/data-screens) "Mail" "ctrl M"
-                  (fn [this] (println this))) ""]
+                  (fn [e]
+                    (doto (ui/select (:frame client) [:#focused])
+                      (config! :border (title-border "Mail"))))) ""]
            [(icon (:options kanji/data-screens) "Options" "ctrl O"
-                  (fn [this] (println this))) ""]
+                  (fn [e]
+                    (doto (ui/select (:frame client) [:#focused])
+                      (config! :border (title-border "Options"))))) ""]
            [(icon (:menu kanji/data-screens) "Game Menu" "ESCAPE"
-                  (fn [this] (println this))) "wrap"]
+                  (fn [e]
+                    (doto (ui/select (:frame client) [:#focused])
+                      (config! :border (title-border "Game Menu"))))) "wrap"]
            
            [(label :text "C-n" :font (derive-font (:bold fonts) 12.0)) ""]
            [(label :text "C-i" :font (derive-font (:bold fonts) 12.0)) ""]
@@ -108,30 +129,48 @@
            [(label :text "ESC" :font (derive-font (:bold fonts) 12.0)) ""]]))
 
 
-(defn radar
-  [client]
-  (mig-panel
-   :constraints ["fill, ins 0" "" ""]
-   :items []
-   :border (title-border "Proximity Sensor")))
+(defn button-group
+  [& buttons]
+  (let [bg (ui/button-group)
+        items (mapv (fn [[btn constraints]]
+                      [(-> (config! btn :group bg)
+                           (config! :border (tab-border)))
+                       constraints]) buttons)]
+    (ui/listen bg :selection
+               (fn [e]
+                 (if-let [s (ui/selection e)]
+                   (if (ui/config s :selected?)
+                     (ui/config! s :background "#E5E5E5")
+                     (ui/config! s :background "#D3D3D3")))))
+    (mig-panel
+     :constraints ["gap 0, ins 0" "" ""]
+     :items items)))
 
 (defn chat-window
   [client]
   (mig-panel
-   :constraints ["fill, ins 0" "" ""]
-   :items [[(scrollable (text :multi-line? true
+   :constraints ["gap 0, fill, ins 0" "" ""]
+   :items [[(button-group [(tab :text " Local "
+                                :selected? true) ""]
+                          [(tab :text " Sector ") ""]
+                          [(tab :text " Faction ") ""]
+                          [(tab :text " Group " :enabled? false) ""]
+                          [(tab :text " Guild " :enabled? false) ""])
+            "wrap"]
+           [(scrollable (text :multi-line? true
                               :editable? false
-                              :rows 5))
+                              :rows 7))
             "grow, wrap"]
-           [(text) "grow"]]
+           [(text) "gapy 5, grow"]]
    :border (title-border "Chat")))
 
 (defn focused-frame
-  [client]
+  [client title]
   (mig-panel
+   :id :focused
    :constraints ["fill" "" ""]
    :items []
-   :border (basic-border)))
+   :border (title-border title)))
 
 (defn mail-screen
   [client]
@@ -154,25 +193,63 @@
               :foreground "#DCDCCC"
               :background "#696969"
               :drag-enabled? false))
-            "width 100%, height 50%, wrap, gapbottom 5"]
+            "wrap"]
            [(scrollable (text :multi-line? true
                               :editable? true
-                              :rows 5))
-            "grow, wrap, gapbottom 5"]
+                              :rows 7))
+            "wrap, gapbottom 5"]
            [(button :text "Reply") "width 25%"]
            [(button :text "Delete") "width 25%"]
            [(button :text "Forward") "width 25%"]
            [(button :text "New") "width 25%"]]
    :border (title-border "Mail")))
 
+(defn top-row
+  [client]
+  (mig-panel
+   :constraints ["fill, ins 0" "" ""]
+   :items [[(basic-systems-health client) "gapleft 3, top, left"]
+           [(toolbar client) "top, center"]
+           [(basic-systems-health client) "gapright 3, top, right"]]))
+
+(defn middle-row
+  [client]
+  (mig-panel
+   :constraints ["fill, ins 0" "" ""]
+   :items [[(focused-frame client "Navigation") "height 100%, width 70%"]
+           [(focused-frame client "Sensor Log") "height 100%, width 30%"]]))
+
+(defn render-proximity
+  [client]
+  (text :background "#000"
+        :multi-line? true
+        :editable? false
+        :cursor :crosshair))
+
+(defn radar
+  [client]
+  (mig-panel
+   :constraints ["fill, ins 0" "" ""]
+   :items [[(mig-panel
+             :id :focused
+             :constraints ["ins 2" "" ""]
+             :items [[(render-proximity client) "width 100%, height 100%"]]
+             :border (title-border "Proximity Sensor"))
+            "top, wrap, grow, height 100%"]
+           [(primary-icons client) "bottom, width 100%"]]))
+
+(defn bottom-row
+  [client]
+  (mig-panel
+   :constraints ["fill, ins 0" "" ""]
+   :items [[(chat-window client) "bottom, grow, width 70%"]
+           [(radar client) "height 100%, bottom, width 30%"]]))
+
 (defn primary-panel
   [client]
   (mig-panel
-   :constraints ["ins 0" "[fill, grow][fill]" "[][fill, grow][]"]
-   :items [[(basic-systems-health client) "top, left"]
-           [(toolbar client) "top, left, wrap"]
-           [(focused-frame client) "wrap"]
-           ;; [(focused-frame client) "wrap"]
-           [(chat-window client) "bottom, left"]
-           [(primary-icons client) "bottom, right"]]
+   :constraints ["ins 0" "" ""]
+   :items [[(top-row client) "height 10%, width 100%, wrap"]
+           [(middle-row client) "height 55%, width 100%, wrap"]
+           [(bottom-row client) "height 35%, width 100%, bottom"]]
    :border (title-border "Veckon Strife")))
